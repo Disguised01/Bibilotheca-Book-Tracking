@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Reading Tracker</title>
+<style>
+  :root{
+    --paper:#EDE7D9;
+    --ink:#2B2620;
+    --ink-soft:#5C5548;
+    --rule:#C9BFA8;
+    --accent:#8A4B2E;
+    --accent-soft:#C97B4A;
+    --done:#5C6E4A;
+    --card:#F5F1E6;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+    padding:32px 20px 80px;
+  }
+  .wrap{max-width:760px;margin:0 auto;}
+  header{margin-bottom:36px;text-align:center;}
+  .kicker{
+    font-family:Georgia,serif;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    font-size:11px;
+    color:var(--accent);
+    margin-bottom:8px;
+  }
+  h1{
+    font-size:34px;
+    font-weight:400;
+    margin:0 0 6px;
+    letter-spacing:.01em;
+  }
+  .sub{color:var(--ink-soft);font-size:14px;font-style:italic;}
+
+  .progress-bar-outer{
+    height:6px;background:var(--rule);border-radius:3px;overflow:hidden;margin:22px 0 4px;
+  }
+  .progress-bar-inner{
+    height:100%;background:var(--accent-soft);transition:width .4s ease;
+  }
+  .progress-label{font-size:12px;color:var(--ink-soft);text-align:right;}
+
+  .tier{
+    margin:34px 0 22px;
+    border-top:1px solid var(--rule);
+    padding-top:18px;
+  }
+  .tier-head{
+    display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:4px;
+  }
+  .tier-title{
+    font-size:19px;font-weight:600;color:var(--ink);
+  }
+  .tier-count{font-size:12px;color:var(--ink-soft);}
+  .tier-desc{font-size:13px;color:var(--ink-soft);font-style:italic;margin-bottom:14px;}
+
+  .book{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:6px;
+    padding:11px 12px;
+    margin-bottom:8px;
+    transition:background .2s;
+  }
+  .book.done{background:#EEEEE0;}
+  .book.done .book-title{color:var(--done);}
+  .book.done .book-title, .book.done .book-author{text-decoration:line-through;text-decoration-color:var(--rule);}
+
+  .chk{
+    width:19px;height:19px;flex:none;margin-top:2px;
+    accent-color:var(--accent);cursor:pointer;
+  }
+  .book-main{flex:1;min-width:0;}
+  .book-author{font-weight:600;font-size:14.5px;}
+  .book-title{font-style:italic;font-size:14.5px;}
+  .book-note{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .del{
+    background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:16px;
+    padding:2px 6px;flex:none;line-height:1;opacity:.5;
+  }
+  .del:hover{opacity:1;color:var(--accent);}
+
+  .add-row{
+    display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;
+  }
+  .add-row input{
+    font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--rule);
+    border-radius:5px;background:var(--card);color:var(--ink);
+  }
+  .add-row input.author{flex:1;min-width:120px;}
+  .add-row input.title{flex:1.4;min-width:140px;}
+  .add-row input.note{flex:1.6;min-width:140px;}
+  .add-row button{
+    font-family:inherit;font-size:13px;background:var(--accent);color:var(--paper);
+    border:none;padding:8px 14px;border-radius:5px;cursor:pointer;
+  }
+  .add-row button:hover{background:var(--accent-soft);}
+
+  .new-tier-section{
+    margin-top:40px;padding-top:20px;border-top:2px solid var(--rule);
+    text-align:center;
+  }
+  .new-tier-section input{
+    font-family:inherit;font-size:14px;padding:9px 12px;border:1px solid var(--rule);
+    border-radius:5px;width:60%;max-width:320px;background:var(--card);
+  }
+  .new-tier-section button{
+    font-family:inherit;font-size:13px;background:var(--ink);color:var(--paper);
+    border:none;padding:9px 16px;border-radius:5px;cursor:pointer;margin-left:8px;
+  }
+
+  .status{
+    position:fixed;bottom:16px;right:16px;font-size:11px;color:var(--ink-soft);
+    background:var(--card);border:1px solid var(--rule);padding:5px 10px;border-radius:5px;
+    opacity:0;transition:opacity .3s;
+  }
+  .status.show{opacity:1;}
+
+  .empty-tier{font-size:12px;color:var(--ink-soft);font-style:italic;padding:6px 0 4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">Amit's Library</div>
+    <h1>Philosophy Reading Tracker</h1>
+    <div class="sub">Greeks to the present — tick as you finish, add more as you go</div>
+    <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar"></div></div>
+    <div class="progress-label" id="progressLabel">0 / 0 read</div>
+    <button id="saveBtn" onclick="manualSave()" style="margin-top:14px;font-family:inherit;font-size:13px;background:var(--ink);color:var(--paper);border:none;padding:9px 18px;border-radius:5px;cursor:pointer;">Save</button>
+  </header>
+
+  <div id="tiers"></div>
+
+  <div class="new-tier-section">
+    <input type="text" id="newTierName" placeholder="Add a new section (e.g. Direction 7 — ...)">
+    <button onclick="addTier()">Add section</button>
+  </div>
+</div>
+<div class="status" id="status">Saved</div>
+
+<script>
+const STORAGE_KEY = 'philosophy-tracker-data';
+
+const defaultData = [
+  { title: "Tier 1 — The Greek Foundation", desc: "You've done Republic. This completes the Socratic picture.", books: [
+    { author: "Plato", title: "Republic", note: "done", done:true },
+    { author: "Plato", title: "Apology", note: "Socrates facing death", done:false },
+    { author: "Plato", title: "Meno", note: "pure epistemology", done:false },
+    { author: "Plato", title: "Phaedo", note: "on the soul", done:false },
+    { author: "Aristotle", title: "Nicomachean Ethics", note: "the good life, don't skip him", done:false },
+  ]},
+  { title: "Tier 2 — Hellenistic Schools", desc: "", books: [
+    { author: "Marcus Aurelius", title: "Meditations", note: "in progress", done:false },
+    { author: "Epictetus", title: "Discourses", note: "rawer, more practical", done:false },
+    { author: "Seneca", title: "Letters from a Stoic", note: "read any 20", done:false },
+  ]},
+  { title: "Tier 3 — The Rationalist Turn", desc: "", books: [
+    { author: "Descartes", title: "Meditations on First Philosophy", note: "short, foundational", done:false },
+    { author: "Spinoza", title: "Ethics", note: "closest Western thinker to Advaita", done:false },
+    { author: "Leibniz", title: "Discourse on Metaphysics", note: "monads vs substance monism", done:false },
+  ]},
+  { title: "Tier 4 — The Critical / Empiricist Turn", desc: "", books: [
+    { author: "Hume", title: "An Enquiry Concerning Human Understanding", note: "start here", done:false },
+    { author: "Hume", title: "A Treatise of Human Nature (Book I)", note: "fuller, rawer version", done:false },
+    { author: "Kant", title: "Prolegomena to Any Future Metaphysics", note: "everyone after responds to him", done:false },
+  ]},
+  { title: "Tier 5 — Existentialism and Beyond", desc: "", books: [
+    { author: "Kierkegaard", title: "Fear and Trembling", note: "first existentialist", done:false },
+    { author: "Nietzsche", title: "Beyond Good and Evil", note: "start here, not Zarathustra", done:false },
+    { author: "Camus", title: "The Myth of Sisyphus", note: "absurdism argued rigorously", done:false },
+    { author: "Dostoevsky", title: "Notes from Underground", note: "precursor to existentialism", done:false },
+  ]},
+  { title: "Tier 6 — Literature as Philosophy", desc: "Your Tolstoy request lives here.", books: [
+    { author: "Tolstoy", title: "A Confession", note: "crisis of meaning after fame/success", done:false },
+    { author: "Tolstoy", title: "The Death of Ivan Ilyich", note: "mortality, the examined life", done:false },
+    { author: "Dostoevsky", title: "The Brothers Karamazov", note: "at least the Grand Inquisitor chapter", done:false },
+    { author: "Camus", title: "The Stranger", note: "novel companion to Sisyphus", done:false },
+  ]},
+  { title: "Tier 7 — Modern Popular Philosophy", desc: "Accessible palate-cleansers between heavy tiers.", books: [
+    { author: "John Lennox", title: "Can Science Explain Everything?", note: "", done:false },
+    { author: "Thomas Nagel", title: "Mind and Cosmos", note: "materialism as incomplete", done:false },
+    { author: "Rebecca Goldstein", title: "Plato at the Googleplex", note: "", done:false },
+    { author: "Julian Baggini", title: "The Pig That Wants to Be Eaten", note: "100 short thought experiments", done:false },
+    { author: "Derek Parfit", title: "Reasons and Persons (Part III)", note: "personal identity — relevant to Advaita", done:false },
+  ]},
+  { title: "Direction Tracks — Pick Later", desc: "Verticals, mind, analytic, continental, comparative, science.", books: [
+    { author: "Thomas Nagel", title: "What Is It Like to Be a Bat", note: "free essay online", done:false },
+    { author: "David Chalmers", title: "The Conscious Mind", note: "", done:false },
+    { author: "Bertrand Russell", title: "Problems of Philosophy", note: "gentle entry to analytic", done:false },
+    { author: "Wittgenstein", title: "Tractatus Logico-Philosophicus", note: "", done:false },
+    { author: "Nagarjuna", title: "Mulamadhyamakakarika", note: "will challenge Advaita productively", done:false },
+    { author: "Thomas Kuhn", title: "The Structure of Scientific Revolutions", note: "", done:false },
+  ]},
+];
+
+let data = null;
+
+async function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      data = JSON.parse(raw);
+    } else {
+      data = defaultData;
+    }
+  } catch(e){
+    data = defaultData;
+  }
+  render();
+}
+
+async function saveData(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    flashStatus();
+  } catch(e){
+    console.error('save failed', e);
+  }
+}
+
+function flashStatus(){
+  const el = document.getElementById('status');
+  el.classList.add('show');
+  clearTimeout(window._statusTimer);
+  window._statusTimer = setTimeout(()=>el.classList.remove('show'), 1200);
+}
+
+function render(){
+  const container = document.getElementById('tiers');
+  container.innerHTML = '';
+  let total=0, doneCount=0;
+
+  data.forEach((tier, ti)=>{
+    total += tier.books.length;
+    doneCount += tier.books.filter(b=>b.done).length;
+
+    const tierEl = document.createElement('div');
+    tierEl.className = 'tier';
+
+    const head = document.createElement('div');
+    head.className = 'tier-head';
+    const doneInTier = tier.books.filter(b=>b.done).length;
+    head.innerHTML = `<span class="tier-title">${escapeHtml(tier.title)}</span><span class="tier-count">${doneInTier}/${tier.books.length}</span>`;
+    tierEl.appendChild(head);
+
+    if(tier.desc){
+      const desc = document.createElement('div');
+      desc.className = 'tier-desc';
+      desc.textContent = tier.desc;
+      tierEl.appendChild(desc);
+    }
+
+    if(tier.books.length === 0){
+      const empty = document.createElement('div');
+      empty.className = 'empty-tier';
+      empty.textContent = 'No books yet — add one below.';
+      tierEl.appendChild(empty);
+    }
+
+    tier.books.forEach((book, bi)=>{
+      const bookEl = document.createElement('div');
+      bookEl.className = 'book' + (book.done ? ' done' : '');
+      bookEl.innerHTML = `
+        <input type="checkbox" class="chk" ${book.done?'checked':''}>
+        <div class="book-main">
+          <span class="book-author">${escapeHtml(book.author)}</span> — <span class="book-title">${escapeHtml(book.title)}</span>
+          ${book.note ? `<div class="book-note">${escapeHtml(book.note)}</div>` : ''}
+        </div>
+        <button class="del" title="Remove">✕</button>
+      `;
+      const chk = bookEl.querySelector('.chk');
+      chk.addEventListener('change', ()=>{
+        data[ti].books[bi].done = chk.checked;
+        saveData();
+        render();
+      });
+      const del = bookEl.querySelector('.del');
+      del.addEventListener('click', ()=>{
+        data[ti].books.splice(bi,1);
+        saveData();
+        render();
+      });
+      tierEl.appendChild(bookEl);
+    });
+
+    const addRow = document.createElement('div');
+    addRow.className = 'add-row';
+    addRow.innerHTML = `
+      <input type="text" class="author" placeholder="Author">
+      <input type="text" class="title" placeholder="Title">
+      <input type="text" class="note" placeholder="Note (optional)">
+      <button>Add book</button>
+    `;
+    const authorInput = addRow.querySelector('.author');
+    const titleInput = addRow.querySelector('.title');
+    const noteInput = addRow.querySelector('.note');
+    const addBtn = addRow.querySelector('button');
+    const doAdd = ()=>{
+      const a = authorInput.value.trim();
+      const t = titleInput.value.trim();
+      if(!a || !t) return;
+      data[ti].books.push({ author:a, title:t, note:noteInput.value.trim(), done:false });
+      saveData();
+      render();
+    };
+    addBtn.addEventListener('click', doAdd);
+    [authorInput,titleInput,noteInput].forEach(inp=>{
+      inp.addEventListener('keydown', e=>{ if(e.key==='Enter') doAdd(); });
+    });
+    tierEl.appendChild(addRow);
+
+    container.appendChild(tierEl);
+  });
+
+  const pct = total ? Math.round((doneCount/total)*100) : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `${doneCount} / ${total} read`;
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+async function manualSave(){
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = 'Saving...';
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    btn.textContent = 'Saved ✓';
+  } catch(e){
+    console.error('save failed', e);
+    btn.textContent = 'Save failed — try again';
+  }
+  setTimeout(()=>{ btn.textContent = 'Save'; }, 1500);
+}
+
+function addTier(){
+  const input = document.getElementById('newTierName');
+  const name = input.value.trim();
+  if(!name) return;
+  data.push({ title: name, desc: '', books: [] });
+  input.value = '';
+  saveData();
+  render();
+}
+
+loadData();
+</script>
+</body>
+</html>
