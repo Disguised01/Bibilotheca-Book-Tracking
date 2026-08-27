@@ -1,354 +1,642 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Amit's Library</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Crimson Pro', serif;
-            background-color: #0c0a09;
-            color: #d1c7b7;
-            background-image:
-                radial-gradient(circle at 50% 0%, rgba(61, 43, 31, 0.15), transparent),
-                url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
-        }
-        .cinzel { font-family: 'Cinzel', serif; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amit's Library</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .shelf-container {
-            perspective: 2000px;
-            margin-bottom: 12rem;
-        }
+:root {
+  --gold: #d4af37;
+  --gold-dim: #9a7c28;
+  --cream: #f1e7d8;
+  --text: #d1c7b7;
+  --bg: #0c0a09;
+}
 
-        .shelf {
-            position: relative;
-            height: 32px;
-            background: #23160d;
-            background-image: url('https://www.transparenttextures.com/patterns/dark-wood.png');
-            box-shadow:
-                0 30px 60px rgba(0,0,0,0.9),
-                inset 0 1px 1px rgba(255,255,255,0.05);
-            z-index: 10;
-            border-bottom: 5px solid #140d08;
-        }
+body {
+  font-family: 'Crimson Pro', serif;
+  background-color: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 48px 16px 120px;
+}
 
-        .shelf::before {
-            content: '';
-            position: absolute;
-            top: -50px;
-            left: 0;
-            width: 100%;
-            height: 50px;
-            background: #1a100a;
-            background-image: url('https://www.transparenttextures.com/patterns/wood-pattern.png');
-            transform: rotateX(80deg);
-            transform-origin: bottom;
-            box-shadow: inset 0 -30px 60px rgba(0,0,0,1);
-        }
+.cinzel { font-family: 'Cinzel', serif; }
 
-        .book-case {
-            position: relative;
-            display: flex;
-            align-items: flex-end;
-            padding: 0 4rem;
-            min-height: 340px;
-            gap: 6px;
-            margin-bottom: -8px;
-            z-index: 20;
-        }
+/* ── Header ── */
+header {
+  text-align: center;
+  margin-bottom: 64px;
+}
+header h1 {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(36px, 8vw, 72px);
+  font-weight: 700;
+  color: #e0d5c5;
+  margin-bottom: 8px;
+  letter-spacing: .02em;
+}
+.ver {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  color: #3a3020;
+  letter-spacing: .15em;
+  margin-bottom: 16px;
+}
+.stats {
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  color: #c5a67c;
+  margin-bottom: 20px;
+}
+.header-btns {
+  display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+}
+.hbtn {
+  font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: .12em;
+  text-transform: uppercase; background: transparent;
+  color: var(--gold-dim); border: 1px solid var(--gold-dim);
+  padding: 8px 20px; border-radius: 3px; cursor: pointer; transition: all .2s;
+  position: relative; overflow: hidden;
+}
+.hbtn:hover { background: rgba(212,175,55,0.1); color: var(--gold); border-color: var(--gold); }
+.hbtn input[type=file] {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; cursor: pointer; font-size: 0;
+}
 
-        /* High-End Archival Spine */
-        .book {
-            position: relative;
-            width: 54px;
-            height: 260px;
-            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-            cursor: pointer;
-            transform-origin: bottom;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-            padding: 24px 0;
-            border-radius: 2px 3px 3px 2px;
-            
-            background-image:
-                linear-gradient(90deg,
-                    rgba(0,0,0,0.4) 0%,
-                    rgba(255,255,255,0.04) 15%,
-                    transparent 50%,
-                    rgba(0,0,0,0.05) 85%,
-                    rgba(0,0,0,0.5) 100%
-                ),
-                url('https://www.transparenttextures.com/patterns/stardust.png');
-            
-            box-shadow:
-                5px 0 15px rgba(0,0,0,0.8),
-                inset 1px 0 2px rgba(255,255,255,0.03);
-        }
+/* ── Shelf section ── */
+.section-label {
+  font-family: 'Cinzel', serif; font-size: 13px; letter-spacing: .15em;
+  text-transform: uppercase; color: rgba(212,175,55,0.5);
+  text-align: center; margin-bottom: 8px;
+}
+.section-count {
+  font-family: 'Cinzel', serif; font-size: 11px; color: rgba(212,175,55,0.3);
+  text-align: center; margin-bottom: 24px; letter-spacing: .1em;
+}
+.section-desc {
+  font-style: italic; font-size: 13px; color: rgba(209,199,183,0.35);
+  text-align: center; margin-top: -18px; margin-bottom: 20px;
+}
 
-        .book:hover {
-            transform: translateY(-45px) translateZ(30px);
-            z-index: 100;
-            box-shadow: 30px 50px 70px rgba(0,0,0,1);
-        }
+.shelf-wrap {
+  margin-bottom: 140px;
+}
 
-        .book:not(.read) {
-            height: 275px;
-            box-shadow: 8px 0 25px rgba(0,0,0,0.9);
-        }
+/* book case */
+.book-case {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 3rem;
+  min-height: 320px;
+  gap: 5px;
+  margin-bottom: -8px;
+  z-index: 20;
+  flex-wrap: wrap;
+}
 
-        .book.read {
-            height: 245px;
-            opacity: 0.8;
-            filter: saturate(0.8) brightness(0.7);
-        }
+/* shelf board */
+.shelf-board {
+  position: relative;
+  height: 28px;
+  background: #23160d;
+  background-image: url('https://www.transparenttextures.com/patterns/dark-wood.png');
+  box-shadow: 0 28px 56px rgba(0,0,0,0.9), inset 0 1px 1px rgba(255,255,255,0.05);
+  z-index: 10;
+  border-bottom: 5px solid #140d08;
+  margin: 0 -6px;
+}
+.shelf-board::before {
+  content: '';
+  position: absolute; top: -44px; left: 0; width: 100%; height: 44px;
+  background: #1a100a;
+  background-image: url('https://www.transparenttextures.com/patterns/wood-pattern.png');
+  transform: rotateX(80deg); transform-origin: bottom;
+  box-shadow: inset 0 -30px 60px rgba(0,0,0,1);
+}
 
-        .book:not(.read)::before {
-            content: '';
-            position: absolute;
-            top: -12px;
-            right: 10px;
-            width: 12px;
-            height: 35px;
-            background: linear-gradient(135deg, #d4af37, #f9f295, #b8860b);
-            clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 85%, 0 100%);
-            z-index: 5;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
-        }
+/* ── Book spine ── */
+.book {
+  position: relative;
+  width: 52px;
+  height: 255px;
+  transition: all 0.45s cubic-bezier(0.23, 1, 0.32, 1);
+  cursor: pointer;
+  transform-origin: bottom;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 22px 0;
+  border-radius: 2px 3px 3px 2px;
+  background-image:
+    linear-gradient(90deg,
+      rgba(0,0,0,0.4) 0%,
+      rgba(255,255,255,0.04) 15%,
+      transparent 50%,
+      rgba(0,0,0,0.05) 85%,
+      rgba(0,0,0,0.5) 100%
+    );
+  box-shadow: 5px 0 15px rgba(0,0,0,0.8), inset 1px 0 2px rgba(255,255,255,0.03);
+  flex: none;
+}
+.book:hover {
+  transform: translateY(-44px) translateZ(28px);
+  z-index: 100;
+  box-shadow: 28px 48px 68px rgba(0,0,0,1);
+}
+.book.unread { height: 268px; }
+.book.read   { height: 240px; opacity: 0.75; filter: saturate(0.75) brightness(0.65); }
+.book.read:hover { opacity: 0.9; filter: saturate(0.85) brightness(0.75); }
 
-        .spine-author {
-            writing-mode: vertical-rl;
-            transform: rotate(180deg);
-            font-family: 'Cinzel', serif;
-            font-size: 0.5rem;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: rgba(212, 175, 55, 0.7);
-            height: 30px;
-            display: flex;
-            align-items: center;
-        }
+/* bookmark ribbon on unread */
+.book.unread::before {
+  content: '';
+  position: absolute; top: -11px; right: 9px;
+  width: 11px; height: 32px;
+  background: linear-gradient(135deg, #d4af37, #f9f295, #b8860b);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 85%, 0 100%);
+  z-index: 5; box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+}
 
-        .spine-title-container {
-            flex-grow: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px 2px;
-            max-height: 180px;
-            overflow: hidden;
-            width: 100%;
-        }
+/* ✓ on read */
+.book.read::after {
+  content: '✓';
+  position: absolute; top: 8px;
+  font-size: 10px; color: rgba(212,175,55,0.6);
+  font-family: 'Cinzel', serif;
+}
 
-        .spine-title {
-            writing-mode: vertical-rl;
-            transform: rotate(180deg);
-            font-family: 'Crimson Pro', serif;
-            font-size: 0.9rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            color: #f1e7d8;
-            white-space: normal;
-            text-align: center;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-            max-height: 100%;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            line-height: 1.1;
-        }
+.spine-author {
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  font-family: 'Cinzel', serif; font-size: 0.48rem;
+  letter-spacing: 3px; text-transform: uppercase; font-weight: 700;
+  color: rgba(212,175,55,0.65); height: 28px;
+  display: flex; align-items: center;
+}
+.spine-title-wrap {
+  flex-grow: 1; display: flex; align-items: center; justify-content: center;
+  padding: 18px 2px; max-height: 170px; overflow: hidden; width: 100%;
+}
+.spine-title {
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  font-family: 'Crimson Pro', serif; font-size: 0.88rem; font-weight: 600;
+  letter-spacing: 0.4px; color: #f1e7d8; text-align: center;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; line-height: 1.1; max-height: 100%;
+}
+.spine-deco {
+  height: 18px; width: 100%; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px; opacity: 0.28;
+}
+.gold-dash { width: 22px; height: 1px; background: var(--gold); }
 
-        #book-info-card {
-            position: fixed;
-            pointer-events: none;
-            opacity: 0;
-            z-index: 1000;
-            width: 280px;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            transform: translateY(10px);
-        }
+/* spine colour palettes */
+.sc0 { background-color: #3b0a0a; }
+.sc1 { background-color: #0f141a; }
+.sc2 { background-color: #121f16; }
+.sc3 { background-color: #0a2529; }
+.sc4 { background-color: #2b333a; }
+.sc5 { background-color: #1a1412; }
+.sc6 { background-color: #141e3c; }
+.sc7 { background-color: #1e1a08; }
 
-        #book-info-card.active {
-            opacity: 1;
-            transform: translateY(0);
-        }
+/* ── Tooltip card ── */
+#book-card {
+  position: fixed; pointer-events: none; opacity: 0; z-index: 1000;
+  width: 280px; transition: opacity 0.25s ease, transform 0.25s ease;
+  transform: translateY(8px);
+}
+#book-card.active { opacity: 1; transform: translateY(0); }
+.card-inner {
+  background: rgba(14,11,9,0.96); backdrop-filter: blur(16px);
+  border: 1px solid rgba(212,175,55,0.28); border-radius: 8px;
+  padding: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.7);
+}
+.card-author { font-family: 'Cinzel', serif; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+.card-title  { font-family: 'Cinzel', serif; font-size: 1.15rem; font-weight: 700; color: #f1e7d8; line-height: 1.2; margin-bottom: 12px; }
+.card-note   { font-size: 0.9rem; color: rgba(209,199,183,0.78); font-style: italic; border-top: 1px solid rgba(212,175,55,0.1); padding-top: 12px; min-height: 36px; line-height: 1.5; }
+.card-badge  { display: inline-block; margin-top: 12px; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 1px; padding: 2px 8px; border-radius: 4px; background: rgba(212,175,55,0.1); color: var(--gold); border: 1px solid rgba(212,175,55,0.2); }
+.card-hint   { font-size: 0.6rem; color: rgba(212,175,55,0.3); margin-top: 8px; letter-spacing: .05em; }
 
-        .info-card-inner {
-            background: rgba(20, 15, 12, 0.95);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-        }
+/* ── Manage panel ── */
+.manage-wrap {
+  max-width: 760px; margin: 0 auto; padding: 0 16px;
+}
+.manage-title {
+  font-family: 'Cinzel', serif; font-size: 18px; color: #c5a67c;
+  letter-spacing: .1em; margin-bottom: 4px; text-align: center;
+}
+.manage-sub {
+  font-style: italic; font-size: 13px; color: rgba(209,199,183,0.35);
+  text-align: center; margin-bottom: 28px;
+}
+.tier-block {
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(212,175,55,0.08);
+  border-radius: 6px; margin-bottom: 10px; overflow: hidden;
+}
+.tier-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 16px; background: rgba(0,0,0,0.25); cursor: pointer;
+  font-family: 'Cinzel', serif; font-size: 13px; color: #c5a67c;
+  letter-spacing: .06em; user-select: none;
+}
+.tier-head .tog { font-size: 11px; color: var(--gold-dim); }
+.tier-body { display: none; padding: 12px 16px; }
+.tier-body.open { display: block; }
 
-        .info-card-author {
-            font-family: 'Cinzel', serif;
-            font-size: 0.7rem;
-            color: #d4af37;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-        }
+.bmr {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 14px; color: rgba(209,199,183,0.7);
+}
+.bmr:last-of-type { border-bottom: none; }
+.bmr input[type=checkbox] { width:14px; height:14px; accent-color: var(--gold); cursor:pointer; flex:none; }
+.bmr-text { flex:1; }
+.bmr-text.struck { text-decoration: line-through; opacity:.4; }
+.bmr-del { background:none; border:none; color:#5a2a1a; cursor:pointer; font-size:14px; padding:0 4px; opacity:.6; transition: all .2s; }
+.bmr-del:hover { opacity:1; color:#c04030; }
 
-        .info-card-title {
-            font-family: 'Cinzel', serif;
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #f1e7d8;
-            line-height: 1.2;
-            margin-bottom: 12px;
-        }
+.add-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
+.add-row input {
+  font-family:'Crimson Pro',serif; font-size:14px; padding:7px 10px;
+  background:rgba(0,0,0,0.4); border:1px solid rgba(212,175,55,0.12);
+  border-radius:3px; color:#e0d5c5; flex:1; min-width:90px;
+}
+.add-row input::placeholder { color:rgba(209,199,183,0.25); }
+.add-row input:focus { outline:none; border-color:rgba(212,175,55,0.4); }
+.add-row button {
+  font-family:'Cinzel',serif; font-size:11px; letter-spacing:.08em;
+  background:rgba(212,175,55,0.1); color:var(--gold-dim);
+  border:1px solid rgba(212,175,55,0.2); padding:7px 14px;
+  border-radius:3px; cursor:pointer; transition:all .2s;
+}
+.add-row button:hover { background:rgba(212,175,55,0.2); color:var(--gold); }
 
-        .info-card-notes {
-            font-family: 'Crimson Pro', serif;
-            font-size: 0.9rem;
-            color: rgba(209, 199, 183, 0.8);
-            font-style: italic;
-            border-top: 1px solid rgba(212, 175, 55, 0.1);
-            padding-top: 12px;
-            min-height: 40px;
-        }
+.del-shelf-btn {
+  font-family:'Cinzel',serif; font-size:9px; letter-spacing:.08em;
+  background:none; border:1px solid rgba(180,60,40,0.2); color:rgba(180,60,40,0.4);
+  padding:4px 12px; border-radius:2px; cursor:pointer; margin-top:12px; transition:all .2s;
+}
+.del-shelf-btn:hover { border-color:rgba(200,70,50,0.6); color:rgba(200,70,50,0.8); }
 
-        .status-badge {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 2px 8px;
-            border-radius: 4px;
-            background: rgba(212, 175, 55, 0.1);
-            color: #d4af37;
-            border: 1px solid rgba(212, 175, 55, 0.2);
-        }
+.new-shelf-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:20px; }
+.new-shelf-row input {
+  font-family:'Crimson Pro',serif; font-size:14px; padding:9px 12px;
+  background:rgba(0,0,0,0.4); border:1px solid rgba(212,175,55,0.12);
+  border-radius:3px; color:#e0d5c5; flex:1; min-width:180px;
+}
+.new-shelf-row input::placeholder { color:rgba(209,199,183,0.2); }
+.new-shelf-row input:focus { outline:none; border-color:rgba(212,175,55,0.35); }
+.new-shelf-row button {
+  font-family:'Cinzel',serif; font-size:11px; letter-spacing:.1em;
+  background:transparent; color:var(--gold-dim); border:1px solid var(--gold-dim);
+  padding:9px 18px; border-radius:3px; cursor:pointer; transition:all .2s;
+}
+.new-shelf-row button:hover { background:rgba(212,175,55,0.1); color:var(--gold); }
 
-        .spine-deco {
-            height: 20px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 3px;
-            opacity: 0.3;
-        }
+/* divider */
+.divider {
+  border: none; border-top: 1px solid rgba(212,175,55,0.08);
+  margin: 60px auto 48px; max-width: 400px;
+}
 
-        .gold-dash {
-            width: 25px;
-            height: 1px;
-            background: #d4af37;
-        }
+/* ── Toast ── */
+.toast {
+  position:fixed; bottom:24px; right:24px;
+  font-family:'Cinzel',serif; font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+  background:rgba(14,11,9,0.95); color:var(--gold);
+  border:1px solid rgba(212,175,55,0.3); padding:10px 18px; border-radius:4px;
+  opacity:0; transition:opacity .3s; pointer-events:none; z-index:9999;
+  backdrop-filter: blur(10px);
+}
+.toast.show { opacity:1; }
 
-        /* Premium Colors */
-        .cloth-oxblood { background-color: #3b0a0a; }
-        .cloth-ink { background-color: #0f141a; }
-        .cloth-forest { background-color: #121f16; }
-        .cloth-deep-teal { background-color: #0a2529; }
-        .cloth-slate { background-color: #2b333a; }
-        .cloth-espresso { background-color: #1a1412; }
-        .cloth-royal { background-color: #141e3c; }
-
-        .glass-panel {
-            background: rgba(15, 12, 10, 0.9);
-            backdrop-filter: blur(30px);
-            border: 1px solid rgba(212, 175, 55, 0.15);
-            box-shadow: 0 40px 80px rgba(0,0,0,0.7);
-        }
-
-        .input-scholarly {
-            background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(224, 213, 197, 0.2);
-            color: #e0d5c5;
-        }
-    </style>
+/* empty state */
+.empty-state {
+  text-align:center; padding:80px 20px;
+  font-family:'Cinzel',serif; font-size:15px; color:rgba(197,166,124,0.3);
+  letter-spacing:.12em; line-height:2;
+}
+</style>
 </head>
-<body class="min-h-[1000px] py-12 px-4 md:px-8">
+<body>
 
-    <div id="book-info-card">
-        <div class="info-card-inner">
-            <div id="card-author" class="info-card-author"></div>
-            <div id="card-title" class="info-card-title"></div>
-            <div id="card-notes" class="info-card-notes"></div>
-            <div class="mt-4">
-                <span id="card-status" class="status-badge"></span>
-            </div>
-        </div>
-    </div>
+<!-- Tooltip -->
+<div id="book-card">
+  <div class="card-inner">
+    <div class="card-author" id="cardAuthor"></div>
+    <div class="card-title"  id="cardTitle"></div>
+    <div class="card-note"   id="cardNote"></div>
+    <div><span class="card-badge" id="cardBadge"></span></div>
+    <div class="card-hint">Click to mark read / unread</div>
+  </div>
+</div>
 
-    <header class="max-w-5xl mx-auto text-center mb-16">
-        <h1 class="cinzel text-5xl md:text-7xl font-bold mb-4 text-[#e0d5c5]">Amit's Library</h1>
-        <div id="read-stats" class="cinzel text-[#c5a67c]">6 / 14 read</div>
-    </header>
+<div class="toast" id="toast"></div>
 
-    <main class="max-w-6xl mx-auto">
-        <section class="shelf-container">
-            <div class="book-case">
-                <div class="book read cloth-oxblood">
-                    <div class="spine-author">Plato</div>
-                    <div class="spine-title-container"><span class="spine-title">Republic</span></div>
-                    <div class="spine-deco"><div class="gold-dash"></div></div>
-                </div>
-                <!-- Add more books here... -->
-            </div>
-            <div class="shelf"></div>
-        </section>
-    </main>
+<!-- Header -->
+<header>
+  <h1>Amit's Library</h1>
+  <div class="ver">v4.0</div>
+  <div class="stats" id="stats">— / — read</div>
+  <div class="header-btns">
+    <button class="hbtn" id="exportBtn">⬇ Export Backup</button>
+    <span class="hbtn">
+      ⬆ Import Backup
+      <input type="file" accept=".json" onchange="importBackup(event)">
+    </span>
+  </div>
+</header>
 
-    <script>
-        document.querySelectorAll('.book').forEach(book => {
-            book.addEventListener('click', function() {
-                this.classList.toggle('read');
-                updateStats();
-                if (activeBook === this) updateTooltip(this);
-            });
-            book.addEventListener('mouseenter', e => showTooltip(book, e));
-            book.addEventListener('mousemove', e => positionTooltip(e));
-            book.addEventListener('mouseleave', () => hideTooltip());
-        });
+<!-- Shelves -->
+<main id="shelves"></main>
 
-        const tooltip = document.getElementById('book-info-card');
-        const cardAuthor = document.getElementById('card-author');
-        const cardTitle = document.getElementById('card-title');
-        const cardNotes = document.getElementById('card-notes');
-        const cardStatus = document.getElementById('card-status');
-        let activeBook = null;
+<hr class="divider">
 
-        function showTooltip(book, e) {
-            activeBook = book;
-            updateTooltip(book);
-            tooltip.classList.add('active');
-            positionTooltip(e);
-        }
+<!-- Manage -->
+<div class="manage-wrap">
+  <div class="manage-title">Manage Collection</div>
+  <div class="manage-sub">Expand a shelf to add or remove books</div>
+  <div id="manageList"></div>
+  <div class="new-shelf-row">
+    <input type="text" id="newShelfName" placeholder="New shelf name (e.g. Tier 9 — Indian Epistemology)">
+    <input type="text" id="newShelfDesc" placeholder="Short description (optional)">
+    <button onclick="addShelf()">+ Add Shelf</button>
+  </div>
+</div>
 
-        function updateTooltip(book) {
-            const author = book.querySelector('.spine-author').innerText;
-            const title = book.querySelector('.spine-title').innerText;
-            cardAuthor.innerText = author;
-            cardTitle.innerText = title;
-            cardStatus.innerText = book.classList.contains('read') ? 'Read' : 'Unread';
-            const savedNotes = localStorage.getItem(`note_${title}_${author}`);
-            cardNotes.innerText = savedNotes || "No personal notes recorded for this volume.";
-        }
+<script>
+// ─── STORAGE ──────────────────────────────────────────────────────────────────
+const KEY = 'amit-library-v4';
 
-        function positionTooltip(e) {
-            tooltip.style.left = `${e.clientX + 20}px`;
-            tooltip.style.top = `${e.clientY - 20}px`;
-        }
+function load() {
+  try {
+    const r = localStorage.getItem(KEY);
+    if (r) return JSON.parse(r);
+  } catch(e) {}
+  return []; // starts empty — populate via Import
+}
 
-        function hideTooltip() {
-            tooltip.classList.remove('active');
-            activeBook = null;
-        }
+function save() {
+  localStorage.setItem(KEY, JSON.stringify(data));
+}
 
-        function updateStats() {
-            const read = document.querySelectorAll('.book.read').length;
-            const total = document.querySelectorAll('.book').length;
-            document.getElementById('read-stats').innerText = `${read} / ${total} read`;
-        }
-    </script>
+let data = load();
+
+// ─── RENDER SHELVES ───────────────────────────────────────────────────────────
+function renderShelves() {
+  const main = document.getElementById('shelves');
+  main.innerHTML = '';
+
+  if (!data.length) {
+    main.innerHTML = `<div class="empty-state">The shelves are bare.<br>Import your backup to begin.</div>`;
+    updateStats(0, 0); return;
+  }
+
+  let total = 0, done = 0;
+
+  data.forEach((tier, ti) => {
+    total += tier.books.length;
+    done  += tier.books.filter(b => b.done).length;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'shelf-wrap';
+
+    const doneN = tier.books.filter(b=>b.done).length;
+    wrap.innerHTML = `
+      <div class="section-label">${esc(tier.title)}</div>
+      <div class="section-count">${doneN} / ${tier.books.length} read</div>
+      ${tier.desc ? `<div class="section-desc">${esc(tier.desc)}</div>` : ''}
+      <div class="book-case" id="bc-${ti}"></div>
+      <div class="shelf-board"></div>
+    `;
+    main.appendChild(wrap);
+
+    const bc = wrap.querySelector(`#bc-${ti}`);
+
+    if (!tier.books.length) {
+      bc.innerHTML = `<div style="font-family:'Cinzel',serif;font-size:10px;color:rgba(212,175,55,0.15);letter-spacing:.1em;align-self:center;">empty shelf</div>`;
+    }
+
+    tier.books.forEach((book, bi) => {
+      const el = document.createElement('div');
+      // vary height subtly
+      const extraH = ((bi * 11 + ti * 7) % 24);
+      const baseH  = book.done ? 240 : 268;
+      el.style.height = (baseH + extraH) + 'px';
+      // vary width subtly
+      const w = 46 + ((bi * 4 + ti * 3) % 14);
+      el.style.width = w + 'px';
+      el.className = `book sc${ti % 8} ${book.done ? 'read' : 'unread'}`;
+
+      el.innerHTML = `
+        <div class="spine-author">${esc(book.author.split(' ').pop())}</div>
+        <div class="spine-title-wrap"><span class="spine-title">${esc(book.title)}</span></div>
+        <div class="spine-deco"><div class="gold-dash"></div><div class="gold-dash"></div></div>
+      `;
+
+      el.addEventListener('mouseenter', e => showCard(e, book));
+      el.addEventListener('mousemove',  e => posCard(e));
+      el.addEventListener('mouseleave', hideCard);
+      el.addEventListener('click', () => {
+        data[ti].books[bi].done = !data[ti].books[bi].done;
+        save(); renderShelves(); renderManage(); updateStats();
+        toast(data[ti].books[bi].done ? 'Marked as read' : 'Unmarked');
+      });
+
+      bc.appendChild(el);
+    });
+  });
+
+  updateStats(total, done);
+}
+
+// ─── STATS ────────────────────────────────────────────────────────────────────
+function updateStats(total, done) {
+  if (total === undefined) {
+    total = data.reduce((s,t) => s + t.books.length, 0);
+    done  = data.reduce((s,t) => s + t.books.filter(b=>b.done).length, 0);
+  }
+  document.getElementById('stats').textContent = `${done} / ${total} read`;
+}
+
+// ─── TOOLTIP ──────────────────────────────────────────────────────────────────
+const bookCard = document.getElementById('book-card');
+
+function showCard(e, book) {
+  document.getElementById('cardAuthor').textContent = book.author;
+  document.getElementById('cardTitle').textContent  = book.title;
+  document.getElementById('cardNote').textContent   = book.note || '';
+  document.getElementById('cardNote').style.display = book.note ? 'block' : 'none';
+  document.getElementById('cardBadge').textContent  = book.done ? 'Read' : 'Unread';
+  bookCard.classList.add('active');
+  posCard(e);
+}
+function posCard(e) {
+  const cw = 280, ch = bookCard.offsetHeight || 180;
+  const x = e.clientX + 22, y = e.clientY - 20;
+  bookCard.style.left = (x + cw > window.innerWidth  ? x - cw - 44 : x) + 'px';
+  bookCard.style.top  = (y + ch > window.innerHeight ? y - ch      : y) + 'px';
+}
+function hideCard() { bookCard.classList.remove('active'); }
+
+// ─── MANAGE ───────────────────────────────────────────────────────────────────
+function renderManage() {
+  const container = document.getElementById('manageList');
+  container.innerHTML = '';
+
+  data.forEach((tier, ti) => {
+    const block = document.createElement('div');
+    block.className = 'tier-block';
+
+    const head = document.createElement('div');
+    head.className = 'tier-head';
+    head.innerHTML = `<span>${esc(tier.title)}</span><span class="tog">▸ expand</span>`;
+
+    const body = document.createElement('div');
+    body.className = 'tier-body';
+
+    head.addEventListener('click', () => {
+      const open = body.classList.toggle('open');
+      head.querySelector('.tog').textContent = open ? '▾ collapse' : '▸ expand';
+    });
+
+    tier.books.forEach((book, bi) => {
+      const row = document.createElement('div');
+      row.className = 'bmr';
+      row.innerHTML = `
+        <input type="checkbox" ${book.done ? 'checked' : ''}>
+        <span class="bmr-text ${book.done ? 'struck' : ''}">${esc(book.author)} — ${esc(book.title)}</span>
+        <button class="bmr-del">✕</button>
+      `;
+      row.querySelector('input').addEventListener('change', ev => {
+        data[ti].books[bi].done = ev.target.checked;
+        save(); renderShelves(); renderManage(); updateStats();
+      });
+      row.querySelector('.bmr-del').addEventListener('click', () => {
+        if (!confirm(`Remove "${book.title}"?`)) return;
+        data[ti].books.splice(bi, 1);
+        save(); renderShelves(); renderManage(); updateStats();
+      });
+      body.appendChild(row);
+    });
+
+    // add row
+    const addRow = document.createElement('div');
+    addRow.className = 'add-row';
+    addRow.innerHTML = `
+      <input class="ia" placeholder="Author" type="text">
+      <input class="it" placeholder="Title"  type="text">
+      <input class="in" placeholder="Note"   type="text">
+      <button>Add</button>
+    `;
+    const ia = addRow.querySelector('.ia');
+    const it = addRow.querySelector('.it');
+    const inEl = addRow.querySelector('.in');
+    const doAdd = () => {
+      const a = ia.value.trim(), t = it.value.trim();
+      if (!a || !t) return;
+      data[ti].books.push({ author:a, title:t, note:inEl.value.trim(), done:false });
+      ia.value = it.value = inEl.value = '';
+      save(); renderShelves(); renderManage(); updateStats();
+      toast('Added to shelf');
+    };
+    addRow.querySelector('button').addEventListener('click', doAdd);
+    [ia, it, inEl].forEach(i => i.addEventListener('keydown', e => { if(e.key==='Enter') doAdd(); }));
+    body.appendChild(addRow);
+
+    // delete shelf
+    const delBtn = document.createElement('button');
+    delBtn.className = 'del-shelf-btn';
+    delBtn.textContent = 'Delete this shelf';
+    delBtn.addEventListener('click', () => {
+      if (!confirm(`Delete shelf "${tier.title}"? Cannot be undone.`)) return;
+      data.splice(ti, 1);
+      save(); renderShelves(); renderManage(); updateStats();
+      toast('Shelf removed');
+    });
+    body.appendChild(delBtn);
+
+    block.appendChild(head);
+    block.appendChild(body);
+    container.appendChild(block);
+  });
+}
+
+// ─── ADD SHELF ────────────────────────────────────────────────────────────────
+function addShelf() {
+  const n = document.getElementById('newShelfName').value.trim();
+  const d = document.getElementById('newShelfDesc').value.trim();
+  if (!n) return;
+  data.push({ title:n, desc:d, books:[] });
+  document.getElementById('newShelfName').value = '';
+  document.getElementById('newShelfDesc').value = '';
+  save(); renderShelves(); renderManage();
+  toast('Shelf added');
+}
+
+// ─── EXPORT ───────────────────────────────────────────────────────────────────
+function exportBackup() {
+  const json = JSON.stringify(data, null, 2);
+  // use data URI — works everywhere, no Blob URL CSP issues
+  const uri = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
+  const a = document.createElement('a');
+  a.href = uri;
+  a.download = `amits-library-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  toast('Backup downloaded');
+}
+
+// ─── IMPORT ───────────────────────────────────────────────────────────────────
+function importBackup(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if (!Array.isArray(imported)) throw new Error();
+      if (!confirm('Replace current library with this backup?')) return;
+      data = imported;
+      save(); renderShelves(); renderManage(); updateStats();
+      toast('Library restored');
+    } catch {
+      alert('Invalid backup file.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(window._tt);
+  window._tt = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.getElementById('exportBtn').addEventListener('click', exportBackup);
+renderShelves();
+renderManage();
+</script>
 </body>
 </html>
