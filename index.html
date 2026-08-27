@@ -264,8 +264,8 @@
   </div>
   <div class="header-btns">
     <button class="hbtn" onclick="exportBackup()">⬇ Export Backup</button>
-    <button class="hbtn" onclick="document.getElementById('importFile').click()">⬆ Import Backup</button>
-    <input type="file" id="importFile" accept=".json" onchange="importBackup(event)">
+    <label class="hbtn" for="importFile" style="cursor:pointer;">⬆ Import Backup</label>
+    <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importBackup(event)">
   </div>
 </header>
 
