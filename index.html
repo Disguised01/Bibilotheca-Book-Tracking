@@ -258,7 +258,7 @@
   <div class="eyebrow">Personal Collection</div>
   <h1>Amit's Library</h1>
   <p class="sub">Greeks to the present — hover a spine, click to toggle read</p>
-  <p style="font-family:'Space Mono',monospace;font-size:9px;color:#4A3820;margin-top:4px;letter-spacing:.1em;">v3.2</p>
+  <p style="font-family:'Space Mono',monospace;font-size:9px;color:#4A3820;margin-top:4px;letter-spacing:.1em;">v3.3</p>
   <div class="progress-wrap">
     <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
     <div class="progress-label" id="progressLabel">0 / 0 read</div>
@@ -519,15 +519,16 @@ function addSection() {
 
 // ─── EXPORT / IMPORT ─────────────────────────────────────────────────────────
 function exportBackup() {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type:'application/json' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href = url;
   a.download = `amits-library-${new Date().toISOString().slice(0,10)}.json`;
   document.body.appendChild(a);
-  a.click();
+  a.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
   document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
   toast('Backup downloaded');
 }
 
