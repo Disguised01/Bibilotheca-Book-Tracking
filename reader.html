@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bibliotheca Reader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root {
+  --ink: #272521;
+  --muted: #77736b;
+  --paper: #f5f0e7;
+  --paper-deep: #e9e0d1;
+  --line: rgba(39, 37, 33, .14);
+  --accent: #be5b36;
+  --accent-dark: #893d28;
+  --rail: #dce3df;
+  --sage: #778a80;
+  --night: #202827;
+  --white: #fffdf8;
+  --wood: #4a2418;
+  --wood-dark: #2a120d;
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  color: #eee3d3;
+  background: var(--wood-dark);
+  background-image: url('https://www.transparenttextures.com/patterns/dark-wood.png');
+  font-family: 'Manrope', sans-serif;
+}
+button, input { font: inherit; }
+button { color: inherit; }
+
+.app {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 74px 1fr;
+  background-color: rgba(74, 36, 24, .72);
+  background-image:
+    linear-gradient(90deg, rgba(20, 7, 4, .24), transparent 30%, rgba(20, 7, 4, .2)),
+    url('https://www.transparenttextures.com/patterns/dark-wood.png');
+}
+
+.topbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;
+  border-bottom: 1px solid rgba(239, 194, 135, .17);
+  background: rgba(38, 14, 9, .7);
+  box-shadow: 0 4px 18px rgba(20, 7, 4, .22);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.brand-mark {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  color: #29130d;
+  background: #d6a35f;
+  border-radius: 8px 3px 8px 3px;
+  font-family: 'Newsreader', serif;
+  font-size: 20px;
+  font-weight: 500;
+}
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-left: 32px;
+  margin-right: auto;
+  color: #c6a88c;
+  font-size: 12px;
+}
+.breadcrumb strong { color: #f2dfc5; font-weight: 600; }
+.top-actions { display: flex; align-items: center; gap: 8px; }
+.icon-btn, .text-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+}
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #c6a88c;
+  font-size: 18px;
+}
+.icon-btn:hover { color: #fff3df; background: rgba(255, 226, 181, .12); }
+.avatar {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  margin-left: 6px;
+  color: var(--accent-dark);
+  background: #ead0be;
+  border-radius: 50%;
+  font-family: 'Newsreader', serif;
+  font-size: 16px;
+}
+
+.sidebar {
+  position: fixed;
+  top: 74px;
+  bottom: 0;
+  left: -270px;
+  z-index: 50;
+  width: 270px;
+  overflow-y: auto;
+  padding: 30px 20px;
+  border-right: 1px solid rgba(239, 194, 135, .25);
+  background: rgba(38, 14, 9, .96);
+  box-shadow: 12px 0 28px rgba(10, 3, 2, .38);
+  transition: left .25s ease;
+}
+.sidebar.open { left: 0; }
+.notes {
+  position: fixed;
+  top: 50%;
+  right: max(6px, calc((100vw - 1020px) / 2 - 126px));
+  z-index: 40;
+  width: 108px;
+  height: 86px;
+  min-height: 0;
+  padding: 10px 11px 9px;
+  border: 1px solid rgba(239, 194, 135, .22);
+  border-radius: 3px 5px 4px 3px;
+  background: linear-gradient(145deg, rgba(77, 38, 23, .8), rgba(38, 14, 9, .8));
+  box-shadow: 4px 7px 0 rgba(20, 7, 4, .25), 0 7px 14px rgba(10, 3, 2, .18), inset 0 1px rgba(255, 222, 174, .04);
+  transform: translateY(-50%) rotate(1deg);
+}
+.eyebrow {
+  margin: 0 0 15px;
+  color: #c6a88c;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.upload {
+  display: block;
+  width: 100%;
+  padding: 16px 14px;
+  border: 1px dashed rgba(235, 190, 126, .48);
+  border-radius: 7px;
+  color: #f0c486;
+  background: rgba(20, 7, 4, .2);
+  text-align: left;
+  cursor: pointer;
+}
+.upload:hover { border-color: #edb46d; background: rgba(255, 214, 157, .1); }
+.upload-symbol {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 22px;
+}
+.upload strong { display: block; font-size: 12px; }
+.upload span { display: block; margin-top: 4px; color: #c6a88c; font-size: 11px; }
+.sidebar-divider { height: 1px; margin: 27px 0 24px; background: rgba(239, 194, 135, .16); }
+.library-list { display: grid; gap: 9px; }
+.library-item {
+  display: grid;
+  grid-template-columns: 31px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.library-item.active { border-color: rgba(235, 180, 109, .38); background: rgba(255, 214, 157, .1); }
+.library-item:hover { background: rgba(255, 214, 157, .1); }
+.mini-cover {
+  height: 42px;
+  border-radius: 2px 4px 4px 2px;
+  background: #31524c;
+  box-shadow: 2px 2px 0 rgba(39, 37, 33, .13);
+}
+.mini-cover.rose { background: #a65c54; }
+.mini-cover.gold { background: #b58a3b; }
+.library-title { overflow-wrap: anywhere; color: #f2dfc5; font-family: 'Newsreader', serif; font-size: 14px; line-height: 1.2; }
+.library-meta { margin-top: 3px; color: #c6a88c; font-size: 10px; }
+.sidebar-footer { margin-top: 32px; color: #a98368; font-size: 11px; line-height: 1.6; }
+
+.reader {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: transparent;
+}
+.library-toggle {
+  width: auto;
+  padding: 0 14px;
+  border: 1px solid rgba(239, 194, 135, .28);
+  border-radius: 4px;
+  color: #e5bb82;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.library-toggle:hover { background: rgba(255, 226, 181, .12); }
+.reader-toolbar {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;
+  border-bottom: 1px solid rgba(239, 194, 135, .15);
+}
+.reader-position { color: #c6a88c; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .05em; }
+.reader-controls { display: flex; align-items: center; gap: 3px; }
+.reader-controls .icon-btn { width: 32px; height: 32px; font-size: 15px; }
+.progress { height: 3px; background: rgba(20, 7, 4, .38); }
+.progress span { display: block; width: 38%; height: 100%; background: #d6a35f; }
+.page-stage {
+  flex: 1;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  width: auto;
+  height: auto;
+  padding: 8px 28px 0;
+  perspective: 1200px;
+}
+.book-spread {
+  position: relative;
+  width: min(100%, 1020px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  filter: drop-shadow(0 22px 18px rgba(18, 5, 3, .42));
+  transform: rotateX(2deg);
+}
+.book-spread {
+  transform: none !important;
+  filter: none !important;
+}
+.book-spread::before {
+  content: '';
+  position: absolute;
+  inset: -11px -12px -17px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #2a120d, #57291c 12%, #3b1a12 50%, #542419 88%, #29110c);
+  box-shadow: 0 24px 28px rgba(8, 2, 1, .5), inset 0 0 0 1px rgba(214, 163, 95, .32);
+  z-index: -3;
+}
+.book-spread::after {
+  content: '';
+  position: absolute;
+  top: 1%;
+  bottom: 1%;
+  left: 50%;
+  width: 34px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, rgba(45, 20, 10, .12), rgba(45, 20, 10, .34), rgba(45, 20, 10, .12), transparent);
+  filter: blur(2px);
+  pointer-events: none;
+  z-index: 5;
+}
+.page {
+  position: relative;
+  height: min(880px, calc(100vh - 120px));
+  min-height: 500px;
+  padding: 40px clamp(25px, 5vw, 62px) 45px;
+  overflow: visible;
+  isolation: isolate;
+  background: #f9f0df;
+  color: var(--ink);
+  z-index: 2;
+  box-shadow: inset -12px 0 25px rgba(84, 49, 24, .08);
+}
+.page + .page { box-shadow: inset 12px 0 25px rgba(84, 49, 24, .08); }
+.page:first-child { border-radius: 8px 0 0 5px; transform: rotateY(2deg); transform-origin: right; }
+.page:last-child { border-radius: 0 8px 5px 0; transform: rotateY(-2deg); transform-origin: left; }
+.page:first-child, .page:last-child { transform: none !important; }
+.page-note-tab {
+  position: absolute;
+  width: 13px;
+  height: 42px;
+  border: 0;
+  border-radius: 2px 0 0 2px;
+  cursor: pointer;
+  z-index: 8;
+  box-shadow: 2px 2px 4px rgba(32, 12, 5, .22);
+}
+.page-note-tab:hover { width: 18px; }
+.page-note-tab.yellow { right: -13px; top: 24%; background: #e5c15d; }
+.page-note-tab.rose { left: -13px; top: 47%; background: #c87d6c; }
+.page-note-tab.sage { right: -13px; top: 66%; background: #a9bd86; }
+.attached-note {
+  position: absolute;
+  z-index: 20;
+  display: none;
+  width: 126px;
+  min-height: 78px;
+  padding: 12px;
+  color: #38291f;
+  background: #e5c15d;
+  box-shadow: 3px 6px 9px rgba(24, 8, 3, .28), inset 0 0 0 1px rgba(90, 60, 30, .12);
+  font-family: 'Newsreader', serif;
+  font-size: 13px;
+  line-height: 1.2;
+}
+.attached-note.visible { display: block; animation: note-in .2s ease both; }
+.attached-note::after { content: 'page note'; display: block; margin-top: 9px; color: rgba(56, 41, 31, .55); font-family: 'DM Mono', monospace; font-size: 8px; }
+.attached-note.left { left: -103px; top: 45%; transform: rotate(-3deg); }
+.attached-note.right { right: -103px; top: 28%; transform: rotate(3deg); background: #edc5b5; }
+.attached-note.right.lower { top: 63%; transform: rotate(-2deg); background: #d5e2d0; }
+.page.right-page { padding-top: 190px; }
+.page.right-page .page-kicker { color: var(--sage); }
+.page.right-page blockquote { border-color: var(--sage); }
+.page.right-page .page-number { margin-top: 110px; }
+.page p:last-of-type { margin-bottom: 0; }
+.page h1 { color: var(--ink); text-wrap: balance; }
+.page-kicker { margin-bottom: 25px; color: var(--accent); font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; }
+.page h1 { max-width: 450px; margin: 0 0 20px; font-family: 'Newsreader', serif; font-size: clamp(30px, 3.5vw, 42px); font-weight: 500; line-height: .98; }
+.page-byline { margin-bottom: 38px; color: var(--muted); font-size: 11px; }
+.page p { margin: 0 0 18px; font-family: 'Newsreader', serif; font-size: 15px; line-height: 1.55; }
+.page p:first-of-type::first-letter { float: left; padding: 8px 8px 0 0; color: var(--accent); font-size: 64px; line-height: .72; }
+.page blockquote { margin: 30px 0; padding-left: 18px; border-left: 2px solid var(--accent); font-family: 'Newsreader', serif; font-size: 18px; font-style: italic; line-height: 1.35; }
+.page-number { margin-top: 68px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 10px; text-align: center; }
+.viewer-page { display: grid; grid-column: 1 / -1; place-items: center; min-height: 100%; padding: 16px; }
+#epubViewer { width: 100%; height: 100%; min-height: 0; overflow: hidden; grid-column: 1 / -1; }
+#epubViewer .epub-container { width: 100% !important; height: 100% !important; overflow: hidden; }
+#epubViewer iframe { display: block; border: 0; overflow: hidden; }
+#pdfViewer { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: center; justify-items: center; gap: 14px; width: 100%; height: 100%; min-height: 0; overflow: auto; grid-column: 1 / -1; }
+#pdfCanvas, #pdfCanvasNext { display: block; min-width: 0; box-shadow: 0 4px 14px rgba(39, 37, 33, .16); }
+.reader-empty { max-width: 280px; color: var(--muted); text-align: center; }
+.reader-empty strong { display: block; margin-bottom: 9px; color: var(--ink); font-family: 'Newsreader', serif; font-size: 24px; font-weight: 500; }
+.reader-empty span { display: block; font-size: 12px; line-height: 1.6; }
+.reader-error { color: var(--accent-dark); font-size: 12px; text-align: center; }
+
+.notes-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.notes-title { font-family: 'Newsreader', serif; font-size: 14px; line-height: 1; }
+.notes-count { display: block; margin-top: 5px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 7px; letter-spacing: 0; }
+.note-card { position: relative; margin-bottom: 11px; padding: 15px; border: 1px solid rgba(39, 37, 33, .1); border-radius: 4px; background: #f8dcae; box-shadow: 2px 3px 0 rgba(39, 37, 33, .06); }
+.note-card:nth-of-type(2) { background: #d5e2d0; transform: rotate(1deg); }
+.note-card:nth-of-type(3) { background: #edc5b5; transform: rotate(-1deg); }
+.note-card p { margin: 0 0 13px; font-family: 'Newsreader', serif; font-size: 16px; line-height: 1.35; }
+.note-meta { display: flex; align-items: center; justify-content: space-between; color: rgba(39, 37, 33, .54); font-family: 'DM Mono', monospace; font-size: 9px; }
+.add-note { width: 100%; margin-top: 13px; padding: 12px; border: 1px dashed #b8aa96; border-radius: 4px; color: var(--muted); background: transparent; cursor: pointer; font-size: 11px; }
+.add-note:hover { border-color: var(--accent); color: var(--accent-dark); }
+.bookmark-status { display: flex; align-items: center; gap: 8px; margin-top: 32px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+.bookmark-status span { color: var(--accent); font-size: 17px; }
+.notes-header { margin: 0; cursor: default; }
+.notes-header[role="button"] { cursor: pointer; }
+.notes-content { display: block; padding-top: 6px; }
+.notes .note-card, .notes .add-note, .notes .bookmark-status { display: none; }
+.note-swatches { display: grid; gap: 5px; }
+.note-swatches span { display: block; height: 5px; border-radius: 1px; box-shadow: 1px 1px 2px rgba(10, 3, 2, .3); }
+.note-swatches .yellow { background: #e5c15d; }
+.note-swatches .rose { background: #edc5b5; }
+.note-swatches .sage { background: #d5e2d0; }
+.notes-hide { display: block; width: 100%; margin-top: 3px; padding: 2px 0; border: 0; color: #b99672; background: transparent; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 7px; line-height: 1; text-align: left; }
+.notes-hide:hover { color: #f0c486; }
+
+body.dark-mode { --paper: #211d19; --paper-deep: #332b24; --line: rgba(244, 225, 195, .16); --muted: #b6a999; }
+.dark-mode .topbar { background: rgba(18, 8, 5, .86); }
+.dark-mode .sidebar, .dark-mode .notes { background: rgba(25, 10, 6, .48); }
+.dark-mode .page { background: #28231e; color: #eadfce; box-shadow: inset -12px 0 25px rgba(0, 0, 0, .16); }
+.dark-mode .page + .page { box-shadow: inset 12px 0 25px rgba(0, 0, 0, .16); }
+.dark-mode .page h1 { color: #eadfce; }
+.dark-mode .note-card { color: #2d251f; }
+.dark-mode #pdfCanvas, .dark-mode #pdfCanvasNext { filter: invert(1) hue-rotate(180deg); }
+
+@media (max-width: 980px) {
+  .notes { right: 16px; }
+}
+@media (max-width: 680px) {
+  .app { display: block; }
+  .topbar { height: 64px; padding: 0 16px; }
+  .breadcrumb { display: none; }
+  .sidebar { top: 64px; width: min(280px, 88vw); left: calc(-1 * min(280px, 88vw) - 12px); }
+  .sidebar.open { left: 0; }
+  .library-toggle { padding: 0 9px; font-size: 9px; }
+  .notes { top: 50%; right: 12px; }
+  .reader-toolbar { height: 56px; padding: 0 16px; }
+  .page-stage { padding: 22px 12px 45px; }
+  .book-spread { grid-template-columns: 1fr; width: min(100%, 520px); transform: none; }
+  .book-spread::after { display: none; }
+  .page:first-child, .page:last-child { border-radius: 5px; transform: none; }
+  .page + .page { margin-top: 18px; }
+  .page.right-page { padding-top: 48px; }
+  .page { height: auto; min-height: 680px; padding: 48px 28px 60px; overflow: visible; }
+  .page h1 { font-size: 34px; }
+  .page p { font-size: 17px; }
+  .page-note-tab { display: none; }
+  #pdfViewer { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">B</span> Bibliotheca</div>
+    <div class="breadcrumb"><span>Reading room</span><span>/</span><strong id="bookTitle">No book loaded</strong></div>
+    <div class="top-actions">
+      <button class="icon-btn library-toggle" id="libraryToggle" aria-expanded="false">☰ Library</button>
+      <button class="icon-btn" aria-label="Search">⌕</button>
+      <button class="icon-btn" id="themeToggle" aria-label="Toggle dark mode">☾</button>
+      <span class="avatar" aria-label="Profile">A</span>
+    </div>
+  </header>
+
+  <aside class="sidebar">
+    <p class="eyebrow">Your library</p>
+    <label class="upload">
+      <span class="upload-symbol">＋</span>
+      <strong>Add a book</strong>
+      <span>EPUB or PDF</span>
+      <input id="bookUpload" type="file" accept=".epub,.pdf" hidden>
+    </label>
+    <div class="sidebar-divider"></div>
+    <p class="eyebrow">Currently reading</p>
+    <div class="library-list" id="currentBookList">
+      <div class="library-meta">No book loaded</div>
+    </div>
+    <p class="sidebar-footer">Your books stay on this device.<br>Nothing is uploaded anywhere.</p>
+  </aside>
+
+  <main class="reader">
+    <div class="reader-toolbar">
+      <span class="reader-position">NO BOOK LOADED</span>
+      <div class="reader-controls">
+        <button class="icon-btn" aria-label="Previous page">←</button>
+        <button class="icon-btn" aria-label="Toggle bookmark">♡</button>
+        <button class="icon-btn" aria-label="Next page">→</button>
+      </div>
+    </div>
+    <div class="progress"><span></span></div>
+    <section class="page-stage">
+      <div class="book-spread">
+        <article class="page viewer-page" id="viewerPage">
+          <div class="reader-empty" id="readerEmpty">
+            <strong>Your reading room is empty</strong>
+            <span>Open an EPUB or PDF from the Library panel to begin.</span>
+          </div>
+          <div id="epubViewer" hidden></div>
+          <div id="pdfViewer" hidden>
+            <canvas id="pdfCanvas"></canvas>
+            <canvas id="pdfCanvasNext"></canvas>
+          </div>
+          <div class="reader-error" id="readerError" hidden></div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <aside class="notes">
+    <div class="notes-header" role="button" tabindex="0" aria-label="Show note for current page"><span class="notes-title">Sticky<br>notes</span><span class="notes-count">0 NOTES</span></div>
+    <div class="notes-content">
+    </div>
+  </aside>
+</div>
+<script>
+const themeToggle = document.getElementById('themeToggle');
+const libraryToggle = document.getElementById('libraryToggle');
+const sidebar = document.querySelector('.sidebar');
+const readerPosition = document.querySelector('.reader-position');
+const readerEmpty = document.getElementById('readerEmpty');
+const readerError = document.getElementById('readerError');
+const epubViewer = document.getElementById('epubViewer');
+const pdfCanvas = document.getElementById('pdfCanvas');
+const pdfViewer = document.getElementById('pdfViewer');
+const pdfCanvasNext = document.getElementById('pdfCanvasNext');
+const bookTitle = document.getElementById('bookTitle');
+const currentBookList = document.getElementById('currentBookList');
+const progressBar = document.querySelector('.progress span');
+const bookUpload = document.getElementById('bookUpload');
+const pageButtons = document.querySelectorAll('.reader-controls .icon-btn');
+const previousButton = pageButtons[0];
+const nextButton = pageButtons[2];
+let epubRendition = null;
+let pdfDocument = null;
+let pdfPageNumber = 1;
+let readerType = null;
+const readingScale = 1.05;
+if (window.pdfjsLib) {
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+function setReaderStatus(page, total) {
+  readerPosition.textContent = total
+    ? `PAGE ${page} OF ${total}`
+    : 'READING';
+  progressBar.style.width = total ? `${(page / total) * 100}%` : '0%';
+}
+
+function showError(message) {
+  readerEmpty.hidden = true;
+  epubViewer.hidden = true;
+  pdfViewer.hidden = true;
+  readerError.hidden = false;
+  readerError.textContent = message;
+}
+
+function setBookTitle(name) {
+  const title = name.replace(/\.(epub|pdf)$/i, '') || 'Untitled book';
+  bookTitle.textContent = title;
+  currentBookList.innerHTML = `<div class="library-item active"><span class="mini-cover"></span><div><div class="library-title"></div><div class="library-meta">Open on this device</div></div></div>`;
+  currentBookList.querySelector('.library-title').textContent = title;
+}
+
+async function renderPdfPage(userScale = 1.0) {
+  const page = await pdfDocument.getPage(pdfPageNumber);
+  const nextPage = pdfPageNumber < pdfDocument.numPages
+    ? await pdfDocument.getPage(pdfPageNumber + 1)
+    : null;
+  const viewerEl = document.getElementById('viewerPage');
+  const style = window.getComputedStyle(viewerEl);
+  const paddingX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+  const paddingY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+  const maxHeight = viewerEl.clientHeight - paddingY;
+  const baseViewport = page.getViewport({ scale: 1 });
+  const fitScale = Math.min((viewerEl.clientWidth - paddingX - 28) / 2 / baseViewport.width, maxHeight / baseViewport.height);
+  const scale = Math.max(fitScale, 0.2) * userScale;
+  const outputScale = window.devicePixelRatio || 1;
+  const renderCanvas = async (pdfPage, canvas) => {
+    if (!pdfPage) {
+      canvas.hidden = true;
+      return;
+    }
+    canvas.hidden = false;
+    const context = canvas.getContext('2d', { alpha: false });
+    const viewport = pdfPage.getViewport({ scale });
+    canvas.width = Math.floor(viewport.width * outputScale);
+    canvas.height = Math.floor(viewport.height * outputScale);
+    canvas.style.width = `${Math.floor(viewport.width)}px`;
+    canvas.style.height = `${Math.floor(viewport.height)}px`;
+    const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
+    await pdfPage.render({ canvasContext: context, viewport, transform }).promise;
+  };
+  await renderCanvas(page, pdfCanvas);
+  await renderCanvas(nextPage, pdfCanvasNext);
+  setReaderStatus(pdfPageNumber, pdfDocument.numPages);
+}
+
+async function openBook(file) {
+  const extension = file.name.split('.').pop().toLowerCase();
+  if (!['epub', 'pdf'].includes(extension)) {
+    showError('Please choose an EPUB or PDF file.');
+    return;
+  }
+
+  readerError.hidden = true;
+  readerEmpty.hidden = true;
+  epubViewer.hidden = extension !== 'epub';
+  pdfViewer.hidden = extension !== 'pdf';
+  setBookTitle(file.name);
+
+  try {
+    const buffer = await file.arrayBuffer();
+    if (extension === 'pdf') {
+      readerType = 'pdf';
+      pdfDocument = await window.pdfjsLib.getDocument({ data: buffer }).promise;
+      pdfPageNumber = 1;
+      await renderPdfPage(readingScale);
+      return;
+    }
+
+    readerType = 'epub';
+    if (!window.ePub) throw new Error('The EPUB reader library did not load.');
+    const book = window.ePub(buffer);
+    const viewerWidth = document.getElementById('viewerPage').clientWidth - 32;
+    const viewerHeight = document.getElementById('viewerPage').clientHeight - 32;
+    epubViewer.style.width = `${viewerWidth}px`;
+    epubViewer.style.height = `${viewerHeight}px`;
+    epubRendition = book.renderTo(epubViewer, {
+      width: viewerWidth,
+      height: viewerHeight,
+      flow: 'paginated',
+      manager: 'default',
+      spread: 'always'
+    });
+    epubRendition.themes.default({
+      body: {
+        'font-size': '125% !important',
+        '-webkit-font-smoothing': 'antialiased',
+        'text-rendering': 'optimizeLegibility'
+      }
+    });
+    epubRendition.on('relocated', location => {
+      const displayed = location.start.displayed;
+      setReaderStatus(displayed.page, displayed.total);
+    });
+    await epubRendition.display();
+  } catch (error) {
+    showError(`Unable to open this ${extension.toUpperCase()}: ${error.message}`);
+  }
+}
+
+libraryToggle.addEventListener('click', () => {
+  const open = sidebar.classList.toggle('open');
+  libraryToggle.setAttribute('aria-expanded', open);
+});
+bookUpload.addEventListener('change', event => {
+  const file = event.target.files[0];
+  if (file) openBook(file);
+  event.target.value = '';
+});
+previousButton.addEventListener('click', async () => {
+  if (readerType === 'pdf' && pdfPageNumber > 1) {
+    pdfPageNumber = Math.max(1, pdfPageNumber - 2);
+    await renderPdfPage(readingScale);
+  } else if (readerType === 'epub' && epubRendition) {
+    await epubRendition.prev();
+  }
+});
+nextButton.addEventListener('click', async () => {
+  if (readerType === 'pdf' && pdfPageNumber < pdfDocument.numPages) {
+    pdfPageNumber = Math.min(pdfDocument.numPages, pdfPageNumber + 2);
+    await renderPdfPage(readingScale);
+  } else if (readerType === 'epub' && epubRendition) {
+    await epubRendition.next();
+  }
+});
+window.addEventListener('resize', () => {
+  if (readerType === 'pdf' && pdfDocument) renderPdfPage(readingScale);
+  if (readerType === 'epub' && epubRendition) {
+    const viewerWidth = document.getElementById('viewerPage').clientWidth - 32;
+    const viewerHeight = document.getElementById('viewerPage').clientHeight - 32;
+    epubViewer.style.width = `${viewerWidth}px`;
+    epubViewer.style.height = `${viewerHeight}px`;
+    epubRendition.resize(viewerWidth, viewerHeight);
+  }
+});
+themeToggle.addEventListener('click', () => {
+  document.body.classList.toggle('dark-mode');
+  const dark = document.body.classList.contains('dark-mode');
+  themeToggle.textContent = dark ? '☀' : '☾';
+  themeToggle.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Toggle dark mode');
+});
+</script>
+</body>
+</html>
