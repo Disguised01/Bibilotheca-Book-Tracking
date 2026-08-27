@@ -585,14 +585,15 @@ function addShelf() {
 // ─── EXPORT ───────────────────────────────────────────────────────────────────
 function exportBackup() {
   const json = JSON.stringify(data, null, 2);
-  // use data URI — works everywhere, no Blob URL CSP issues
-  const uri = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
+  const blob = new Blob([json], { type: 'application/json' });
+  const uri = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = uri;
   a.download = `amits-library-${new Date().toISOString().slice(0,10)}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(uri), 1000);
   toast('Backup downloaded');
 }
 
