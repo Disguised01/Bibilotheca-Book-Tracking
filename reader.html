@@ -1345,13 +1345,17 @@ function normalizeTitle(s) {
     .trim();
 }
 
+function getLibraryBooks() {
+  const library = loadLibrary();
+  return library.flatMap(rack => Array.isArray(rack.shelves)
+    ? rack.shelves.flatMap(shelf => Array.isArray(shelf.books) ? shelf.books : [])
+    : Array.isArray(rack.books) ? rack.books : []);
+}
+
 function findBookById(id) {
   if (!id) return null;
-  const library = loadLibrary();
-  for (const tier of library) {
-    for (const book of tier.books) {
-      if (book.id === id) return book;
-    }
+  for (const book of getLibraryBooks()) {
+    if (book.id === id) return book;
   }
   return null;
 }
@@ -1359,15 +1363,12 @@ function findBookById(id) {
 function findBookIdByTitle(title) {
   const needle = normalizeTitle(title);
   if (!needle) return null;
-  const library = loadLibrary();
   let partial = null;
-  for (const tier of library) {
-    for (const book of tier.books) {
-      const hay = normalizeTitle(book.title);
-      if (!hay) continue;
-      if (hay === needle) return book.id;
-      if (hay.includes(needle) || needle.includes(hay)) partial = book.id;
-    }
+  for (const book of getLibraryBooks()) {
+    const hay = normalizeTitle(book.title);
+    if (!hay) continue;
+    if (hay === needle) return book.id;
+    if (hay.includes(needle) || needle.includes(hay)) partial = book.id;
   }
   return partial;
 }
