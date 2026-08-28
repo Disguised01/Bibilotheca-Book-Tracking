@@ -624,7 +624,7 @@ header h1 {
 
 <script>
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
-const KEY = 'amit-library-v4';
+const KEY = 'bibliotheca-library-v4';
 const BOOKMARKS_KEY = 'bibliotheca-bookmarks';
 
 // ─── THEMES ───────────────────────────────────────────────────────────────────
@@ -697,7 +697,7 @@ function save() {
 let data = load();
 
 // ─── ACTIVE RACK (single almirah shown at a time) ──────────────────────────────
-const ACTIVE_RACK_KEY = 'amit-library-active-rack';
+const ACTIVE_RACK_KEY = 'bibliotheca-active-rack';
 function loadActiveRack() {
   try { return parseInt(localStorage.getItem(ACTIVE_RACK_KEY) || '0', 10) || 0; } catch(e) { return 0; }
 }
@@ -1314,7 +1314,7 @@ function exportBackup() {
   const uri = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = uri;
-  a.download = `amits-library-full-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `bibliotheca-library-full-backup-${new Date().toISOString().slice(0,10)}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
