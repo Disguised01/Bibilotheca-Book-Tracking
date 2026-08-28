@@ -13,7 +13,7 @@
   --gold-dim: #9a7c28;
   --cream: #f1e7d8;
   --text: #d1c7b7;
-  --bg: #0c0a09;
+  --bg: #16130f;
 }
 
 body {
@@ -50,7 +50,11 @@ header h1 {
   font-family: 'Cinzel', serif;
   font-size: 14px;
   color: #c5a67c;
-  margin-bottom: 20px;
+  margin-bottom: 6px;
+}
+.storage-info {
+  font-family: 'Cinzel', serif; font-size: 10px; color: rgba(212,175,55,0.28);
+  letter-spacing: .08em; margin-bottom: 20px;
 }
 .header-btns {
   display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
@@ -73,14 +77,70 @@ header h1 {
   opacity: 0; cursor: pointer; font-size: 0;
 }
 
+.rack-nav {
+  display: flex; align-items: center; justify-content: center; gap: 20px;
+  margin-bottom: 14px;
+}
+.rack-nav-btn {
+  background: transparent; border: 1px solid rgba(212,175,55,0.3); color: var(--gold);
+  width: 38px; height: 38px; border-radius: 50%; font-size: 18px; cursor: pointer;
+  transition: all .2s; display: flex; align-items: center; justify-content: center;
+}
+.rack-nav-btn:hover:not(:disabled) { background: rgba(212,175,55,0.12); transform: scale(1.08); }
+.rack-nav-btn:disabled { opacity: .25; cursor: default; }
+.rack-nav-pos {
+  font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: .15em;
+  color: rgba(212,175,55,0.45); text-transform: uppercase; min-width: 60px; text-align: center;
+}
+.rack-label-input {
+  font-family: 'Crimson Pro', serif; font-size: 12px; padding: 5px 8px;
+  background: rgba(0,0,0,0.4); border: 1px solid rgba(212,175,55,0.15);
+  border-radius: 3px; color: #e0d5c5;
+}
+
+/* ── Rack (almirah) ── */
+.rack-wrap {
+  position: relative;
+  max-width: 1180px;
+  margin: 0 auto 110px;
+  padding: 34px 28px 4px;
+  border-radius: 10px;
+  border: 1px solid rgba(212,175,55,0.08);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0) 140px);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4), 0 30px 70px rgba(0,0,0,0.5);
+}
+.rack-wrap::before {
+  content: ''; position: absolute; top: 0; left: 14px; right: 14px; height: 3px;
+  background: linear-gradient(90deg, transparent, var(--rack-accent, #d4af37), transparent);
+  opacity: .5;
+}
+.rack-title-row { text-align: center; margin-bottom: 2px; }
+.rack-title {
+  font-family: 'Cinzel', serif; font-size: clamp(19px, 2.6vw, 26px);
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--rack-accent, #e0d5c5); text-shadow: 0 2px 10px rgba(0,0,0,.7);
+}
+.rack-sub {
+  text-align: center; font-family: 'Cinzel', serif; font-size: 10px;
+  letter-spacing: .14em; text-transform: uppercase; color: rgba(212,175,55,0.25);
+  margin-bottom: 10px;
+}
+.add-shelf-inline-btn {
+  display: block; margin: 0 auto 10px;
+  font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  background: transparent; border: 1px dashed rgba(212,175,55,0.25); color: rgba(212,175,55,0.45);
+  padding: 8px 18px; border-radius: 4px; cursor: pointer; transition: all .2s;
+}
+.add-shelf-inline-btn:hover { border-color: var(--gold); color: var(--gold); background: rgba(212,175,55,0.06); }
+
 /* ── Shelf section ── */
 .section-label {
   font-family: 'Cinzel', serif; font-size: 13px; letter-spacing: .15em;
-  text-transform: uppercase; color: rgba(212,175,55,0.5);
+  text-transform: uppercase; color: var(--shelf-label, rgba(212,175,55,0.5));
   text-align: center; margin-bottom: 8px;
 }
 .section-count {
-  font-family: 'Cinzel', serif; font-size: 11px; color: rgba(212,175,55,0.3);
+  font-family: 'Cinzel', serif; font-size: 11px; color: var(--shelf-count, rgba(212,175,55,0.3));
   text-align: center; margin-bottom: 24px; letter-spacing: .1em;
 }
 .section-desc {
@@ -89,8 +149,121 @@ header h1 {
 }
 
 .shelf-wrap {
-  margin-bottom: 140px;
+  margin-bottom: 90px;
+  position: relative;
 }
+.rack-shelves > .shelf-wrap:last-child { margin-bottom: 30px; }
+
+.shelf-settings-btn {
+  position: absolute; top: -2px; right: 8px;
+  background: transparent; border: 1px solid rgba(212,175,55,0.18);
+  color: rgba(212,175,55,0.45); width: 26px; height: 26px; border-radius: 50%;
+  cursor: pointer; font-size: 13px; line-height: 1; transition: all .2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.shelf-settings-btn:hover { color: var(--gold); border-color: var(--gold); background: rgba(212,175,55,0.08); }
+
+/* ── Colour settings modal ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 3000;
+  background: rgba(5,4,3,0.82); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal-inner {
+  width: 100%; max-width: 420px;
+  background: rgba(16,13,10,0.98); border: 1px solid rgba(212,175,55,0.28);
+  border-radius: 10px; padding: 26px; box-shadow: 0 30px 70px rgba(0,0,0,0.8);
+  max-height: 86vh; overflow-y: auto;
+}
+.modal-title {
+  font-family: 'Cinzel', serif; font-size: 15px; letter-spacing: .1em;
+  color: #e0d5c5; text-align: center; margin-bottom: 4px; text-transform: uppercase;
+}
+.modal-sub {
+  font-style: italic; font-size: 12px; color: rgba(209,199,183,0.4);
+  text-align: center; margin-bottom: 18px;
+}
+.swatch-grid {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 9px; margin-bottom: 20px;
+}
+.swatch {
+  width: 100%; aspect-ratio: 1; border-radius: 6px; cursor: pointer;
+  border: 2px solid rgba(255,255,255,0.06); transition: all .15s; padding: 0;
+}
+.swatch:hover { transform: scale(1.12); border-color: rgba(212,175,55,0.5); }
+.swatch.selected { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(212,175,55,0.3); }
+.custom-color-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+  padding-top: 16px; border-top: 1px solid rgba(212,175,55,0.1);
+}
+.cc-label {
+  font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: .08em;
+  color: rgba(209,199,183,0.6); text-transform: uppercase; flex: 1;
+}
+.custom-color-row input[type=color] {
+  width: 42px; height: 32px; border: 1px solid rgba(212,175,55,0.25);
+  border-radius: 4px; background: transparent; cursor: pointer; padding: 0;
+}
+.modal-actions { display: flex; gap: 10px; }
+.modal-actions button, .custom-color-row button {
+  font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: .08em;
+  background: transparent; color: var(--gold-dim); border: 1px solid var(--gold-dim);
+  padding: 8px 16px; border-radius: 3px; cursor: pointer; transition: all .2s; flex: 1;
+}
+.modal-actions button:hover, .custom-color-row button:hover { background: rgba(212,175,55,0.1); color: var(--gold); }
+#resetShelfColor { border-color: rgba(180,60,40,0.3); color: rgba(180,60,40,0.55); }
+#resetShelfColor:hover { background: rgba(180,60,40,0.1); color: rgba(200,70,50,0.85); border-color: rgba(200,70,50,0.5); }
+
+/* theme select */
+.theme-select {
+  font-family: 'Crimson Pro', serif; font-size: 14px; padding: 9px 12px;
+  background: rgba(0,0,0,0.4); border: 1px solid rgba(212,175,55,0.12);
+  border-radius: 3px; color: #e0d5c5; cursor: pointer;
+}
+.theme-select:focus { outline: none; border-color: rgba(212,175,55,0.35); }
+.tier-theme-select {
+  font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: .04em;
+  background: rgba(0,0,0,0.4); border: 1px solid rgba(212,175,55,0.15);
+  border-radius: 3px; color: rgba(197,166,124,0.8); padding: 3px 6px; cursor: pointer;
+}
+
+/* ── Book card edit mode ── */
+.card-edit { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(212,175,55,0.1); }
+#book-card.editing .card-edit { display: block; }
+#book-card.editing .card-hint { display: none; }
+.edit-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin-bottom: 8px;
+}
+.edit-row label {
+  font-family: 'Cinzel', serif; font-size: 0.58rem; letter-spacing: .06em;
+  text-transform: uppercase; color: rgba(212,175,55,0.5); flex: none; width: 90px;
+}
+.edit-row input {
+  font-family: 'Crimson Pro', serif; font-size: 13px; color: #e0d5c5;
+  background: rgba(0,0,0,0.4); border: 1px solid rgba(212,175,55,0.18);
+  border-radius: 3px; padding: 4px 8px; flex: 1; min-width: 0;
+}
+.edit-row input:focus { outline: none; border-color: rgba(212,175,55,0.45); }
+.edit-row-color input[type=color] {
+  width: 34px; height: 28px; padding: 0; border: 1px solid rgba(212,175,55,0.25);
+  border-radius: 4px; background: transparent; cursor: pointer; flex: none;
+}
+.mini-btn {
+  font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: .05em;
+  background: rgba(212,175,55,0.08); color: var(--gold-dim);
+  border: 1px solid rgba(212,175,55,0.25); padding: 5px 8px; border-radius: 3px;
+  cursor: pointer; flex: none; transition: all .2s;
+}
+.mini-btn:hover { background: rgba(212,175,55,0.18); color: var(--gold); }
+.edit-close {
+  width: 100%; margin-top: 4px;
+  font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  background: rgba(212,175,55,0.1); color: var(--gold); border: 1px solid rgba(212,175,55,0.3);
+  padding: 7px; border-radius: 3px; cursor: pointer; transition: all .2s;
+}
+.edit-close:hover { background: rgba(212,175,55,0.18); }
 
 /* book case */
 .book-case {
@@ -100,7 +273,7 @@ header h1 {
   padding: 0 3rem;
   min-height: 320px;
   gap: 5px;
-  margin-bottom: -8px;
+  margin-bottom: -2px;
   z-index: 20;
   flex-wrap: wrap;
 }
@@ -138,7 +311,8 @@ header h1 {
   justify-content: space-between;
   align-items: center;
   padding: 22px 0;
-  border-radius: 2px 3px 3px 2px;
+  border-radius: 2px 3px 0 0;
+  z-index: 2;
   background-image:
     linear-gradient(90deg,
       rgba(0,0,0,0.4) 0%,
@@ -171,7 +345,7 @@ header h1 {
 
 /* ✓ on read */
 .book.read::after {
-  content: '✓';
+  content: none;
   position: absolute; top: 8px;
   font-size: 10px; color: rgba(212,175,55,0.6);
   font-family: 'Cinzel', serif;
@@ -179,10 +353,11 @@ header h1 {
 
 .spine-author {
   writing-mode: vertical-rl; transform: rotate(180deg);
-  font-family: 'Cinzel', serif; font-size: 0.48rem;
+  font-family: 'Cinzel', serif;
   letter-spacing: 3px; text-transform: uppercase; font-weight: 700;
-  color: rgba(212,175,55,0.65); height: 28px;
-  display: flex; align-items: center;
+  color: rgba(212,175,55,0.65);
+  display: flex; align-items: center; justify-content: flex-end;
+  white-space: nowrap; flex: none;
 }
 .spine-title-wrap {
   flex-grow: 1; display: flex; align-items: center; justify-content: center;
@@ -193,7 +368,7 @@ header h1 {
   font-family: 'Crimson Pro', serif; font-size: 0.88rem; font-weight: 600;
   letter-spacing: 0.4px; color: #f1e7d8; text-align: center;
   text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden; line-height: 1.1; max-height: 100%;
 }
 .spine-deco {
@@ -201,16 +376,6 @@ header h1 {
   align-items: center; justify-content: center; gap: 3px; opacity: 0.28;
 }
 .gold-dash { width: 22px; height: 1px; background: var(--gold); }
-
-/* spine colour palettes */
-.sc0 { background-color: #3b0a0a; }
-.sc1 { background-color: #0f141a; }
-.sc2 { background-color: #121f16; }
-.sc3 { background-color: #0a2529; }
-.sc4 { background-color: #2b333a; }
-.sc5 { background-color: #1a1412; }
-.sc6 { background-color: #141e3c; }
-.sc7 { background-color: #1e1a08; }
 
 /* ── Tooltip card ── */
 #book-card {
@@ -257,7 +422,7 @@ header h1 {
 
 /* ── Manage panel ── */
 .manage-wrap {
-  max-width: 760px; margin: 0 auto; padding: 0 16px;
+  max-width: 780px; margin: 0 auto; padding: 0 16px;
 }
 .manage-title {
   font-family: 'Cinzel', serif; font-size: 18px; color: #c5a67c;
@@ -267,6 +432,20 @@ header h1 {
   font-style: italic; font-size: 13px; color: rgba(209,199,183,0.35);
   text-align: center; margin-bottom: 28px;
 }
+.rack-block {
+  background: rgba(255,255,255,0.025); border: 1px solid rgba(212,175,55,0.12);
+  border-radius: 8px; margin-bottom: 14px; overflow: hidden;
+}
+.rack-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px; background: rgba(0,0,0,0.3); cursor: pointer;
+  font-family: 'Cinzel', serif; font-size: 14px; color: #e0d5c5; letter-spacing: .07em;
+}
+.rack-head .tog { font-size: 11px; color: var(--gold-dim); }
+.rack-body-manage { display: none; padding: 14px 16px 16px; }
+.rack-body-manage.open { display: block; }
+.shelf-sub-block { margin-left: 4px; margin-bottom: 10px; border-left: 2px solid rgba(212,175,55,0.15); }
+
 .tier-block {
   background: rgba(255,255,255,0.03); border: 1px solid rgba(212,175,55,0.08);
   border-radius: 6px; margin-bottom: 10px; overflow: hidden;
@@ -320,7 +499,7 @@ header h1 {
 .new-shelf-row input {
   font-family:'Crimson Pro',serif; font-size:14px; padding:9px 12px;
   background:rgba(0,0,0,0.4); border:1px solid rgba(212,175,55,0.12);
-  border-radius:3px; color:#e0d5c5; flex:1; min-width:180px;
+  border-radius:3px; color:#e0d5c5; flex:1; min-width:150px;
 }
 .new-shelf-row input::placeholder { color:rgba(209,199,183,0.2); }
 .new-shelf-row input:focus { outline:none; border-color:rgba(212,175,55,0.35); }
@@ -371,7 +550,38 @@ header h1 {
       <button type="button" class="card-id" id="cardId" title="Click to copy">—</button>
       <span class="card-id-hint">click to copy</span>
     </div>
-    <div class="card-hint">Click spine to mark read / unread</div>
+    <div class="card-edit" id="cardEdit">
+      <div class="edit-row"><label>Pages read</label><input type="number" min="0" id="editPagesRead" placeholder="0"></div>
+      <div class="edit-row"><label>Total pages</label><input type="number" min="0" id="editPagesTotal" placeholder="0"></div>
+      <div class="edit-row"><label>Started</label><input type="date" id="editStart"></div>
+      <div class="edit-row"><label>Completed</label><input type="date" id="editDone"></div>
+      <div class="edit-row edit-row-color">
+        <label>Colour</label>
+        <input type="color" id="editColor">
+        <button class="mini-btn" id="editColorApply">Set</button>
+        <button class="mini-btn" id="editColorReset" title="Revert to automatic colour">Auto</button>
+      </div>
+      <button class="edit-close" id="editClose">Done</button>
+    </div>
+    <div class="card-hint" id="cardHintText">Click spine to mark read / unread · Alt+click to edit progress &amp; colour</div>
+  </div>
+</div>
+
+<!-- Shelf colour modal -->
+<div class="modal-overlay" id="colorModal">
+  <div class="modal-inner">
+    <div class="modal-title">Shelf Colour</div>
+    <div class="modal-sub" id="colorModalShelfName"></div>
+    <div class="swatch-grid" id="swatchGrid"></div>
+    <div class="custom-color-row">
+      <span class="cc-label">Custom RGB</span>
+      <input type="color" id="customColorInput" value="#3b0a0a">
+      <button id="applyCustomColor">Apply</button>
+    </div>
+    <div class="modal-actions">
+      <button id="resetShelfColor">Reset to theme</button>
+      <button id="closeColorModal">Close</button>
+    </div>
   </div>
 </div>
 
@@ -380,8 +590,9 @@ header h1 {
 <!-- Header -->
 <header>
   <h1>Bibliotheca</h1>
-  <div class="ver">v4.0</div>
+  <div class="ver">v5.1</div>
   <div class="stats" id="stats">— / — read</div>
+  <div class="storage-info" id="storageInfo"></div>
   <div class="header-btns">
     <a class="hbtn hbtn-link" href="reader.html">Reading table</a>
     <button class="hbtn" id="exportBtn">⬇ Export Backup</button>
@@ -400,12 +611,14 @@ header h1 {
 <!-- Manage -->
 <div class="manage-wrap">
   <div class="manage-title">Manage Collection</div>
-  <div class="manage-sub">Expand a shelf to add or remove books</div>
+  <div class="manage-sub">Expand an almirah to manage its shelves and books</div>
   <div id="manageList"></div>
   <div class="new-shelf-row">
-    <input type="text" id="newShelfName" placeholder="New shelf name (e.g. Tier 9 — Indian Epistemology)">
-    <input type="text" id="newShelfDesc" placeholder="Short description (optional)">
-    <button onclick="addShelf()">+ Add Shelf</button>
+    <input type="text" id="newRackName" placeholder="New almirah name (e.g. Science Fiction)">
+    <input type="text" id="newRackLabel" placeholder="Catalogue label (optional, e.g. Classics)">
+    <input type="text" id="newRackDesc" placeholder="First shelf description (optional)">
+    <select class="theme-select" id="newRackTheme"></select>
+    <button onclick="addRack()">+ Add Almirah</button>
   </div>
 </div>
 
@@ -414,19 +627,99 @@ header h1 {
 const KEY = 'amit-library-v4';
 const BOOKMARKS_KEY = 'bibliotheca-bookmarks';
 
+// ─── THEMES ───────────────────────────────────────────────────────────────────
+// hue/sat/light are ranges used to derive a unique, deterministic colour per
+// book (from its id) while keeping every book in a rack's palette family.
+const THEMES = {
+  philosophy: { name: 'Philosophy', accent: '#d4af37', accentDim: '#9a7c28', label: 'rgba(212,175,55,0.5)', count: 'rgba(212,175,55,0.3)',
+    hue: [0, 42], sat: [40, 62], light: [10, 17] },
+  classics: { name: 'Classics', accent: '#c9a15a', accentDim: '#8f6f3e', label: 'rgba(201,161,90,0.55)', count: 'rgba(201,161,90,0.32)',
+    hue: [28, 52], sat: [32, 52], light: [11, 18] },
+  literature: { name: 'Literature', accent: '#8fa88a', accentDim: '#5f7a5b', label: 'rgba(143,168,138,0.55)', count: 'rgba(143,168,138,0.32)',
+    hue: [95, 155], sat: [26, 46], light: [9, 16] },
+  fiction: { name: 'Fiction', accent: '#a97ca0', accentDim: '#7a5574', label: 'rgba(169,124,160,0.55)', count: 'rgba(169,124,160,0.32)',
+    hue: [275, 325], sat: [30, 52], light: [9, 16] },
+  poetry: { name: 'Poetry', accent: '#c98a6b', accentDim: '#8f5c46', label: 'rgba(201,138,107,0.55)', count: 'rgba(201,138,107,0.32)',
+    hue: [8, 30], sat: [42, 60], light: [11, 18] },
+  scifi: { name: 'Science & Speculation', accent: '#6fa8c9', accentDim: '#4a7690', label: 'rgba(111,168,201,0.55)', count: 'rgba(111,168,201,0.32)',
+    hue: [188, 224], sat: [36, 56], light: [9, 15] },
+  biography: { name: 'Biography & History', accent: '#b8935a', accentDim: '#82683e', label: 'rgba(184,147,90,0.55)', count: 'rgba(184,147,90,0.32)',
+    hue: [30, 48], sat: [24, 42], light: [9, 16] },
+};
+
+// ─── COLOUR PALETTE (30 preset shelf colours) ──────────────────────────────────
+const PALETTE = [
+  '#3b0a0a','#5c1a1a','#7a2323','#0f141a','#1c2b3d','#274060',
+  '#121f16','#1f3324','#2e4d34','#0a2529','#124048','#1a5c66',
+  '#2b333a','#3d4750','#556270','#1a1412','#3a2a1c','#5c4326',
+  '#141e3c','#232f5c','#33407a','#1e1a08','#3a3210','#5c4f1a',
+  '#2a1226','#4a1f42','#331630','#241021','#402038','#5c2d52'
+];
+
+// ─── DATA MIGRATION ─────────────────────────────────────────────────────────────
+// Old format: flat array of "tiers" (title/desc/theme/color/books).
+// New format: array of racks (almirahs), each holding one or more shelves.
+function migrateData(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.map(item => {
+    if (Array.isArray(item.shelves)) {
+      return {
+        title: item.title || 'Untitled',
+        theme: item.theme || 'philosophy',
+        label: item.label || undefined,
+        shelves: item.shelves.map(s => ({
+          title: s.title || 'Shelf', desc: s.desc || '', color: s.color, books: s.books || []
+        }))
+      };
+    }
+    // old flat shelf-as-tier record — wrap it as a rack with one shelf
+    return {
+      title: item.title || 'Untitled',
+      theme: item.theme || 'philosophy',
+      shelves: [{ title: item.title || 'Shelf 1', desc: item.desc || '', color: item.color, books: item.books || [] }]
+    };
+  });
+}
+
 function load() {
   try {
     const r = localStorage.getItem(KEY);
-    if (r) return JSON.parse(r);
+    if (r) return migrateData(JSON.parse(r));
   } catch(e) {}
   return []; // starts empty — populate via Import
 }
 
 function save() {
   localStorage.setItem(KEY, JSON.stringify(data));
+  updateStorageInfo();
 }
 
 let data = load();
+
+// ─── ACTIVE RACK (single almirah shown at a time) ──────────────────────────────
+const ACTIVE_RACK_KEY = 'amit-library-active-rack';
+function loadActiveRack() {
+  try { return parseInt(localStorage.getItem(ACTIVE_RACK_KEY) || '0', 10) || 0; } catch(e) { return 0; }
+}
+function saveActiveRack(i) {
+  try { localStorage.setItem(ACTIVE_RACK_KEY, String(i)); } catch(e) {}
+}
+let currentRackIndex = loadActiveRack();
+
+// ─── WHOLE-PAGE THEME (re-skins the page to match the visible almirah) ─────────
+function hexToRgb(hex) {
+  hex = (hex || '#d4af37').replace('#','');
+  if (hex.length === 3) hex = hex.split('').map(c => c+c).join('');
+  const num = parseInt(hex, 16);
+  return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+}
+function hexToRgba(hex, a) { const { r, g, b } = hexToRgb(hex); return `rgba(${r},${g},${b},${a})`; }
+function applyPageTheme(theme) {
+  document.documentElement.style.setProperty('--gold', theme.accent);
+  document.documentElement.style.setProperty('--gold-dim', theme.accentDim);
+  document.body.style.backgroundImage =
+    `radial-gradient(1400px 900px at 50% -8%, ${hexToRgba(theme.accent, 0.12)}, transparent 55%)`;
+}
 
 function loadBookmarks() {
   try {
@@ -436,9 +729,16 @@ function loadBookmarks() {
   return {};
 }
 
+// ─── NESTED TRAVERSAL HELPERS ───────────────────────────────────────────────────
+function forEachBook(cb) {
+  data.forEach((rack, ri) => rack.shelves.forEach((shelf, si) => shelf.books.forEach((book, bi) => {
+    cb(book, ri, si, bi, rack, shelf);
+  })));
+}
+
 function generateBookId() {
   const used = new Set();
-  data.forEach(t => t.books.forEach(b => { if (b.id) used.add(b.id); }));
+  forEachBook(b => { if (b.id) used.add(b.id); });
   let id;
   do { id = String(Math.floor(100000 + Math.random() * 900000)); } while (used.has(id));
   return id;
@@ -446,91 +746,216 @@ function generateBookId() {
 
 function ensureBookIds() {
   let changed = false;
-  data.forEach(t => t.books.forEach(b => {
-    if (!b.id || !/^\d{6}$/.test(b.id)) {
-      b.id = generateBookId();
-      changed = true;
-    }
-  }));
+  forEachBook(b => {
+    if (!b.id || !/^\d{6}$/.test(b.id)) { b.id = generateBookId(); changed = true; }
+  });
   if (changed) save();
 }
 
 ensureBookIds();
 
-// ─── RENDER SHELVES ───────────────────────────────────────────────────────────
+function populateThemeSelect(sel, selected) {
+  sel.innerHTML = Object.keys(THEMES).map(k =>
+    `<option value="${k}" ${k === selected ? 'selected' : ''}>${THEMES[k].name}</option>`
+  ).join('');
+}
+populateThemeSelect(document.getElementById('newRackTheme'), 'philosophy');
+
+// ─── STORAGE SIZE READOUT ───────────────────────────────────────────────────────
+function formatBytes(n) {
+  if (n < 1024) return n + ' B';
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+  return (n / 1024 / 1024).toFixed(2) + ' MB';
+}
+function updateStorageInfo() {
+  let bytes = 0;
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      bytes += new Blob([k + (localStorage.getItem(k) || '')]).size;
+    }
+  } catch (e) {}
+  const el = document.getElementById('storageInfo');
+  if (el) el.textContent = `${formatBytes(bytes)} stored locally · browsers typically allow ~5–10 MB per site`;
+}
+
+// ─── PER-BOOK COLOUR (deterministic from id, unless overridden) ────────────────
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+function bookHSL(book, theme) {
+  const h = hashStr(String(book.id || book.title || 'x'));
+  const hue   = theme.hue[0]   + (h % 1000) / 1000 * (theme.hue[1] - theme.hue[0]);
+  const sat   = theme.sat[0]   + ((h >>> 3) % 1000) / 1000 * (theme.sat[1] - theme.sat[0]);
+  const light = theme.light[0] + ((h >>> 7) % 1000) / 1000 * (theme.light[1] - theme.light[0]);
+  return { h: hue, s: sat, l: light };
+}
+function hslToHex(h, s, l) {
+  s /= 100; l /= 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  const m = l - c / 2;
+  let r = 0, g = 0, b = 0;
+  if (h < 60)       { r = c; g = x; b = 0; }
+  else if (h < 120) { r = x; g = c; b = 0; }
+  else if (h < 180) { r = 0; g = c; b = x; }
+  else if (h < 240) { r = 0; g = x; b = c; }
+  else if (h < 300) { r = x; g = 0; b = c; }
+  else              { r = c; g = 0; b = x; }
+  const toHex = v => Math.round((v + m) * 255).toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+function spineColorFor(book, shelf, theme) {
+  if (book.color) return book.color;      // per-book override wins
+  if (shelf.color) return shelf.color;    // then per-shelf flat colour
+  const { h, s, l } = bookHSL(book, theme);
+  return `hsl(${h.toFixed(1)} ${s.toFixed(0)}% ${l.toFixed(0)}%)`;
+}
+function autoHexFor(book, theme) {
+  const { h, s, l } = bookHSL(book, theme);
+  return hslToHex(h, s, l);
+}
+
+// ─── RENDER SHELVES (one almirah visible at a time) ────────────────────────────
 function renderShelves() {
   const main = document.getElementById('shelves');
   main.innerHTML = '';
 
   if (!data.length) {
-    main.innerHTML = `<div class="empty-state">The shelves are bare.<br>Import your backup to begin.</div>`;
-    updateStats(0, 0); return;
+    applyPageTheme(THEMES.philosophy);
+    main.innerHTML = `<div class="empty-state">The shelves are bare.<br>Import your backup, or add an almirah below, to begin.</div>`;
+    updateStats(); return;
   }
 
-  let total = 0, done = 0;
+  if (currentRackIndex >= data.length) currentRackIndex = data.length - 1;
+  if (currentRackIndex < 0) currentRackIndex = 0;
 
-  data.forEach((tier, ti) => {
-    total += tier.books.length;
-    done  += tier.books.filter(b => b.done).length;
+  const ri = currentRackIndex;
+  const rack = data[ri];
+  const theme = THEMES[rack.theme] || THEMES.philosophy;
+  applyPageTheme(theme);
 
+  // nav bar
+  const nav = document.createElement('div');
+  nav.className = 'rack-nav';
+  nav.innerHTML = `
+    <button class="rack-nav-btn" id="prevRackBtn" ${data.length < 2 ? 'disabled' : ''} title="Previous almirah">‹</button>
+    <div class="rack-nav-pos">${ri + 1} / ${data.length}</div>
+    <button class="rack-nav-btn" id="nextRackBtn" ${data.length < 2 ? 'disabled' : ''} title="Next almirah">›</button>
+  `;
+  main.appendChild(nav);
+  nav.querySelector('#prevRackBtn').addEventListener('click', () => {
+    currentRackIndex = (currentRackIndex - 1 + data.length) % data.length;
+    saveActiveRack(currentRackIndex); renderShelves();
+  });
+  nav.querySelector('#nextRackBtn').addEventListener('click', () => {
+    currentRackIndex = (currentRackIndex + 1) % data.length;
+    saveActiveRack(currentRackIndex); renderShelves();
+  });
+
+  const rackWrap = document.createElement('div');
+  rackWrap.className = 'rack-wrap';
+  rackWrap.style.setProperty('--rack-accent', theme.accent);
+  const rackBookCount = rack.shelves.reduce((s, sh) => s + sh.books.length, 0);
+  const catalogueLabel = rack.label || theme.name;
+
+  rackWrap.innerHTML = `
+    <div class="rack-title-row"><span class="rack-title">${esc(rack.title)}</span></div>
+    <div class="rack-sub">${esc(catalogueLabel)} · ${rackBookCount} volume${rackBookCount === 1 ? '' : 's'}</div>
+    <div class="rack-shelves" id="rack-shelves-${ri}"></div>
+    <button class="add-shelf-inline-btn" data-ri="${ri}">+ Add Shelf to this Almirah</button>
+  `;
+  main.appendChild(rackWrap);
+  rackWrap.querySelector('.add-shelf-inline-btn').addEventListener('click', () => quickAddShelf(ri));
+
+  const shelvesContainer = rackWrap.querySelector(`#rack-shelves-${ri}`);
+
+  rack.shelves.forEach((shelf, si) => {
     const wrap = document.createElement('div');
     wrap.className = 'shelf-wrap';
+    wrap.style.setProperty('--shelf-label', theme.label);
+    wrap.style.setProperty('--shelf-count', theme.count);
 
-    const doneN = tier.books.filter(b=>b.done).length;
+    const doneN = shelf.books.filter(b => b.done).length;
     wrap.innerHTML = `
-      <div class="section-label">${esc(tier.title)}</div>
-      <div class="section-count">${doneN} / ${tier.books.length} read</div>
-      ${tier.desc ? `<div class="section-desc">${esc(tier.desc)}</div>` : ''}
-      <div class="book-case" id="bc-${ti}"></div>
+      <button class="shelf-settings-btn" title="Shelf colour settings" data-ri="${ri}" data-si="${si}">⚙</button>
+      <div class="section-label">${esc(shelf.title)}</div>
+      <div class="section-count">${doneN} / ${shelf.books.length} read</div>
+      ${shelf.desc ? `<div class="section-desc">${esc(shelf.desc)}</div>` : ''}
+      <div class="book-case" id="bc-${ri}-${si}"></div>
       <div class="shelf-board"></div>
     `;
-    main.appendChild(wrap);
+    shelvesContainer.appendChild(wrap);
+    wrap.querySelector('.shelf-settings-btn').addEventListener('click', () => openColorModal(ri, si));
 
-    const bc = wrap.querySelector(`#bc-${ti}`);
+    const bc = wrap.querySelector(`#bc-${ri}-${si}`);
 
-    if (!tier.books.length) {
+    if (!shelf.books.length) {
       bc.innerHTML = `<div style="font-family:'Cinzel',serif;font-size:10px;color:rgba(212,175,55,0.15);letter-spacing:.1em;align-self:center;">empty shelf</div>`;
     }
 
-    tier.books.forEach((book, bi) => {
+    shelf.books.forEach((book, bi) => {
       const el = document.createElement('div');
-      // vary height subtly
-      const extraH = ((bi * 11 + ti * 7) % 24);
+      const extraH = ((bi * 11 + si * 7 + ri * 13) % 24);
       const baseH  = book.done ? 240 : 268;
       el.style.height = (baseH + extraH) + 'px';
-      // vary width subtly
-      const w = 46 + ((bi * 4 + ti * 3) % 14);
+      const w = 46 + ((bi * 4 + si * 3 + ri * 2) % 14);
       el.style.width = w + 'px';
-      el.className = `book sc${ti % 8} ${book.done ? 'read' : 'unread'}`;
+      el.className = `book ${book.done ? 'read' : 'unread'}`;
+      el.style.backgroundColor = spineColorFor(book, shelf, theme);
 
-      el.innerHTML = `
-        <div class="spine-author">${esc(book.author.split(' ').pop())}</div>
-        <div class="spine-title-wrap"><span class="spine-title">${esc(book.title)}</span></div>
-        <div class="spine-deco"><div class="gold-dash"></div><div class="gold-dash"></div></div>
-      `;
+        const lastName = book.author.split(' ').pop();
+        const authorFontSize = lastName.length > 12 ? 0.36 : lastName.length > 9 ? 0.42 : 0.48;
+        el.innerHTML = `
+          <div class="spine-author" style="font-size:${authorFontSize}rem;">${esc(lastName)}</div>
+          <div class="spine-title-wrap"><span class="spine-title">${esc(book.title)}</span></div>
+          <div class="spine-deco"><div class="gold-dash"></div><div class="gold-dash"></div></div>
+        `;
 
       el.addEventListener('mouseenter', e => showCard(e, book));
       el.addEventListener('mousemove',  e => posCard(e));
       el.addEventListener('mouseleave', leaveBookCard);
-      el.addEventListener('click', () => {
-        data[ti].books[bi].done = !data[ti].books[bi].done;
+      el.addEventListener('click', (e) => {
+        if (e.altKey) {
+          e.preventDefault();
+          openEditCard(e, ri, si, bi);
+          return;
+        }
+        shelf.books[bi].done = !shelf.books[bi].done;
         save(); renderShelves(); renderManage(); updateStats();
-        toast(data[ti].books[bi].done ? 'Marked as read' : 'Unmarked');
+        toast(shelf.books[bi].done ? 'Marked as read' : 'Unmarked');
       });
 
       bc.appendChild(el);
     });
   });
 
-  updateStats(total, done);
+  updateStats();
 }
 
-// ─── STATS ────────────────────────────────────────────────────────────────────
-function updateStats(total, done) {
-  if (total === undefined) {
-    total = data.reduce((s,t) => s + t.books.length, 0);
-    done  = data.reduce((s,t) => s + t.books.filter(b=>b.done).length, 0);
-  }
+// keyboard paging between almirahs (ignored while typing in a field)
+document.addEventListener('keydown', (e) => {
+  const tag = (e.target && e.target.tagName) || '';
+  if (['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
+  if (!data.length) return;
+  if (e.key === 'ArrowLeft')  document.getElementById('prevRackBtn')?.click();
+  if (e.key === 'ArrowRight') document.getElementById('nextRackBtn')?.click();
+});
+
+function quickAddShelf(ri) {
+  const n = prompt('Name for the new shelf:');
+  if (!n || !n.trim()) return;
+  data[ri].shelves.push({ title: n.trim(), desc: '', books: [] });
+  save(); renderShelves(); renderManage();
+  toast('Shelf added');
+}
+
+// ─── STATS (always reflects the whole library, not just the visible almirah) ──
+function updateStats() {
+  let total = 0, done = 0;
+  forEachBook(b => { total++; if (b.done) done++; });
   document.getElementById('stats').textContent = `${done} / ${total} read`;
 }
 
@@ -541,14 +966,19 @@ let cardPinned = false;
 function showCard(e, book) {
   cardPinned = false;
   bookCard.classList.remove('pinned');
+  if (editingRef) { commitEdit(); editingRef = null; }
+  bookCard.classList.remove('editing');
   document.getElementById('cardAuthor').textContent = book.author;
   document.getElementById('cardTitle').textContent  = book.title;
   document.getElementById('cardNote').textContent   = book.note || '';
   document.getElementById('cardNote').style.display = book.note ? 'block' : 'none';
   const bookmark = loadBookmarks()[book.id];
-  document.getElementById('cardProgress').textContent = bookmark
-    ? `${Math.round((bookmark.percentage || 0) * 100)}% bookmarked`
-    : 'Not started';
+  const bits = [];
+  if (bookmark) bits.push(`${Math.round((bookmark.percentage || 0) * 100)}% bookmarked`);
+  if (book.pagesRead || book.pagesTotal) bits.push(`${book.pagesRead || 0}${book.pagesTotal ? '/' + book.pagesTotal : ''} pages`);
+  if (book.startDate) bits.push(`started ${book.startDate}`);
+  if (book.completionDate) bits.push(`finished ${book.completionDate}`);
+  document.getElementById('cardProgress').textContent = bits.length ? bits.join(' · ') : 'Not started';
   document.getElementById('cardBadge').textContent  = book.done ? 'Read' : 'Unread';
   const cardId = document.getElementById('cardId');
   cardId.textContent = book.id || '—';
@@ -567,8 +997,10 @@ function posCard(e) {
   bookCard.style.top  = (y + ch > window.innerHeight ? y - ch      : y) + 'px';
 }
 function hideCard() {
+  if (editingRef) { commitEdit(); }
   cardPinned = false;
-  bookCard.classList.remove('active', 'pinned');
+  editingRef = null;
+  bookCard.classList.remove('active', 'pinned', 'editing');
 }
 function leaveBookCard(e) {
   if (e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('#book-card')) return;
@@ -581,114 +1013,313 @@ bookCard.addEventListener('mouseenter', () => {
 });
 bookCard.addEventListener('mouseleave', leaveBookCard);
 
+// ─── EDIT CARD (alt+click) ──────────────────────────────────────────────────────
+let editingRef = null; // {ri, si, bi}
+const editPagesRead  = document.getElementById('editPagesRead');
+const editPagesTotal = document.getElementById('editPagesTotal');
+const editStart      = document.getElementById('editStart');
+const editDone       = document.getElementById('editDone');
+const editColor      = document.getElementById('editColor');
+
+function openEditCard(e, ri, si, bi) {
+  const shelf = data[ri].shelves[si];
+  const book  = shelf.books[bi];
+  const theme = THEMES[data[ri].theme] || THEMES.philosophy;
+  editingRef = { ri, si, bi };
+  showCard(e, book);
+  cardPinned = true;
+  bookCard.classList.add('pinned', 'editing');
+  editPagesRead.value  = book.pagesRead  || '';
+  editPagesTotal.value = book.pagesTotal || '';
+  editStart.value      = book.startDate       || '';
+  editDone.value        = book.completionDate || '';
+  editColor.value       = book.color || autoHexFor(book, theme);
+  posCard(e);
+}
+
+function commitEdit() {
+  if (!editingRef) return;
+  const { ri, si, bi } = editingRef;
+  const book = data[ri].shelves[si].books[bi];
+  book.pagesRead      = editPagesRead.value  ? Number(editPagesRead.value)  : undefined;
+  book.pagesTotal     = editPagesTotal.value ? Number(editPagesTotal.value) : undefined;
+  book.startDate       = editStart.value       || undefined;
+  book.completionDate = editDone.value         || undefined;
+  save(); updateStats();
+}
+
+[editPagesRead, editPagesTotal, editStart, editDone].forEach(inp => {
+  inp.addEventListener('change', commitEdit);
+});
+
+document.getElementById('editColorApply').addEventListener('click', () => {
+  if (!editingRef) return;
+  const { ri, si, bi } = editingRef;
+  data[ri].shelves[si].books[bi].color = editColor.value;
+  save(); renderShelves();
+  toast('Book colour set');
+});
+document.getElementById('editColorReset').addEventListener('click', () => {
+  if (!editingRef) return;
+  const { ri, si, bi } = editingRef;
+  delete data[ri].shelves[si].books[bi].color;
+  const theme = THEMES[data[ri].theme] || THEMES.philosophy;
+  editColor.value = autoHexFor(data[ri].shelves[si].books[bi], theme);
+  save(); renderShelves();
+  toast('Reverted to automatic colour');
+});
+
+document.getElementById('editClose').addEventListener('click', () => {
+  commitEdit();
+  editingRef = null;
+  bookCard.classList.remove('editing');
+  hideCard();
+});
+
+// ─── SHELF COLOUR MODAL ────────────────────────────────────────────────────────
+let colorModalRef = null; // {ri, si}
+const colorModal = document.getElementById('colorModal');
+const swatchGrid  = document.getElementById('swatchGrid');
+const customColorInput = document.getElementById('customColorInput');
+
+function openColorModal(ri, si) {
+  colorModalRef = { ri, si };
+  const rack = data[ri], shelf = rack.shelves[si];
+  document.getElementById('colorModalShelfName').textContent = `${rack.title} — ${shelf.title}`;
+  const current = shelf.color || null;
+  swatchGrid.innerHTML = PALETTE.map(hex =>
+    `<button class="swatch ${hex === current ? 'selected' : ''}" style="background:${hex}" data-hex="${hex}" title="${hex}"></button>`
+  ).join('');
+  swatchGrid.querySelectorAll('.swatch').forEach(btn => {
+    btn.addEventListener('click', () => {
+      data[ri].shelves[si].color = btn.dataset.hex;
+      save(); renderShelves();
+      openColorModal(ri, si); // refresh selected state
+    });
+  });
+  if (current) customColorInput.value = current;
+  colorModal.classList.add('open');
+}
+document.getElementById('applyCustomColor').addEventListener('click', () => {
+  if (!colorModalRef) return;
+  data[colorModalRef.ri].shelves[colorModalRef.si].color = customColorInput.value;
+  save(); renderShelves();
+  openColorModal(colorModalRef.ri, colorModalRef.si);
+});
+document.getElementById('resetShelfColor').addEventListener('click', () => {
+  if (!colorModalRef) return;
+  delete data[colorModalRef.ri].shelves[colorModalRef.si].color;
+  save(); renderShelves();
+  openColorModal(colorModalRef.ri, colorModalRef.si);
+});
+document.getElementById('closeColorModal').addEventListener('click', () => {
+  colorModal.classList.remove('open');
+  colorModalRef = null;
+});
+colorModal.addEventListener('click', (e) => {
+  if (e.target === colorModal) { colorModal.classList.remove('open'); colorModalRef = null; }
+});
+
 // ─── MANAGE ───────────────────────────────────────────────────────────────────
 function renderManage() {
   const container = document.getElementById('manageList');
   container.innerHTML = '';
 
-  data.forEach((tier, ti) => {
-    const block = document.createElement('div');
-    block.className = 'tier-block';
+  data.forEach((rack, ri) => {
+    const rackBlock = document.createElement('div');
+    rackBlock.className = 'rack-block';
 
-    const head = document.createElement('div');
-    head.className = 'tier-head';
-    head.innerHTML = `<span>${esc(tier.title)}</span><span class="tog">▸ expand</span>`;
-
-    const body = document.createElement('div');
-    body.className = 'tier-body';
-
-    head.addEventListener('click', () => {
-      const open = body.classList.toggle('open');
-      head.querySelector('.tog').textContent = open ? '▾ collapse' : '▸ expand';
-    });
-
-    tier.books.forEach((book, bi) => {
-      const row = document.createElement('div');
-      row.className = 'bmr';
-      row.innerHTML = `
-        <input type="checkbox" ${book.done ? 'checked' : ''}>
-        <span class="bmr-text ${book.done ? 'struck' : ''}">${esc(book.author)} — ${esc(book.title)}</span>
-        <button class="bmr-del">✕</button>
-      `;
-      row.querySelector('input').addEventListener('change', ev => {
-        data[ti].books[bi].done = ev.target.checked;
-        save(); renderShelves(); renderManage(); updateStats();
-      });
-      row.querySelector('.bmr-del').addEventListener('click', () => {
-        if (!confirm(`Remove "${book.title}"?`)) return;
-        data[ti].books.splice(bi, 1);
-        save(); renderShelves(); renderManage(); updateStats();
-      });
-      body.appendChild(row);
-    });
-
-    // add row
-    const addRow = document.createElement('div');
-    addRow.className = 'add-row';
-    addRow.innerHTML = `
-      <input class="ia" placeholder="Author" type="text">
-      <input class="it" placeholder="Title"  type="text">
-      <input class="in" placeholder="Note"   type="text">
-      <button>Add</button>
+    const rHead = document.createElement('div');
+    rHead.className = 'rack-head';
+    rHead.innerHTML = `
+      <span>${esc(rack.title)}</span>
+      <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <input class="rack-label-input" type="text" placeholder="Catalogue label" value="${esc(rack.label || '')}" style="width:120px;">
+        <select class="tier-theme-select"></select>
+        <button class="mini-btn view-rack-btn" title="View this almirah">view</button>
+        <span class="tog">▸ expand</span>
+      </span>
     `;
-    const ia = addRow.querySelector('.ia');
-    const it = addRow.querySelector('.it');
-    const inEl = addRow.querySelector('.in');
-    const doAdd = () => {
-      const a = ia.value.trim(), t = it.value.trim();
-      if (!a || !t) return;
-      data[ti].books.push({ id: generateBookId(), author:a, title:t, note:inEl.value.trim(), done:false });
-      ia.value = it.value = inEl.value = '';
-      save(); renderShelves(); renderManage(); updateStats();
-      toast('Added to shelf');
-    };
-    addRow.querySelector('button').addEventListener('click', doAdd);
-    [ia, it, inEl].forEach(i => i.addEventListener('keydown', e => { if(e.key==='Enter') doAdd(); }));
-    body.appendChild(addRow);
-
-    // delete shelf
-    const delBtn = document.createElement('button');
-    delBtn.className = 'del-shelf-btn';
-    delBtn.textContent = 'Delete this shelf';
-    delBtn.addEventListener('click', () => {
-      if (!confirm(`Delete shelf "${tier.title}"? Cannot be undone.`)) return;
-      data.splice(ti, 1);
-      save(); renderShelves(); renderManage(); updateStats();
-      toast('Shelf removed');
+    populateThemeSelect(rHead.querySelector('.tier-theme-select'), rack.theme || 'philosophy');
+    rHead.querySelector('.tier-theme-select').addEventListener('click', e => e.stopPropagation());
+    rHead.querySelector('.tier-theme-select').addEventListener('change', e => {
+      data[ri].theme = e.target.value;
+      save(); renderShelves(); renderManage();
     });
-    body.appendChild(delBtn);
+    rHead.querySelector('.rack-label-input').addEventListener('click', e => e.stopPropagation());
+    rHead.querySelector('.rack-label-input').addEventListener('change', e => {
+      data[ri].label = e.target.value.trim() || undefined;
+      save(); renderShelves();
+    });
+    rHead.querySelector('.view-rack-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      currentRackIndex = ri;
+      saveActiveRack(ri);
+      renderShelves();
+      document.getElementById('shelves').scrollIntoView({ behavior: 'smooth' });
+    });
 
-    block.appendChild(head);
-    block.appendChild(body);
-    container.appendChild(block);
+    const rBody = document.createElement('div');
+    rBody.className = 'rack-body-manage';
+
+    rHead.addEventListener('click', () => {
+      const open = rBody.classList.toggle('open');
+      rHead.querySelector('.tog').textContent = open ? '▾ collapse' : '▸ expand';
+    });
+
+    rack.shelves.forEach((shelf, si) => {
+      const shelfBlock = document.createElement('div');
+      shelfBlock.className = 'tier-block shelf-sub-block';
+
+      const sHead = document.createElement('div');
+      sHead.className = 'tier-head';
+      sHead.innerHTML = `<span>${esc(shelf.title)}</span><span class="tog">▸ expand</span>`;
+
+      const sBody = document.createElement('div');
+      sBody.className = 'tier-body';
+
+      sHead.addEventListener('click', () => {
+        const open = sBody.classList.toggle('open');
+        sHead.querySelector('.tog').textContent = open ? '▾ collapse' : '▸ expand';
+      });
+
+      shelf.books.forEach((book, bi) => {
+        const row = document.createElement('div');
+        row.className = 'bmr';
+        row.innerHTML = `
+          <input type="checkbox" ${book.done ? 'checked' : ''}>
+          <span class="bmr-text ${book.done ? 'struck' : ''}">${esc(book.author)} — ${esc(book.title)}</span>
+          <button class="bmr-del">✕</button>
+        `;
+        row.querySelector('input').addEventListener('change', ev => {
+          data[ri].shelves[si].books[bi].done = ev.target.checked;
+          save(); renderShelves(); renderManage(); updateStats();
+        });
+        row.querySelector('.bmr-del').addEventListener('click', () => {
+          if (!confirm(`Remove "${book.title}"?`)) return;
+          data[ri].shelves[si].books.splice(bi, 1);
+          save(); renderShelves(); renderManage(); updateStats();
+        });
+        sBody.appendChild(row);
+      });
+
+      // add book row
+      const addRow = document.createElement('div');
+      addRow.className = 'add-row';
+      addRow.innerHTML = `
+        <input class="ia" placeholder="Author" type="text">
+        <input class="it" placeholder="Title"  type="text">
+        <input class="in" placeholder="Note"   type="text">
+        <button>Add</button>
+      `;
+      const ia = addRow.querySelector('.ia');
+      const it = addRow.querySelector('.it');
+      const inEl = addRow.querySelector('.in');
+      const doAdd = () => {
+        const a = ia.value.trim(), t = it.value.trim();
+        if (!a || !t) return;
+        data[ri].shelves[si].books.push({ id: generateBookId(), author:a, title:t, note:inEl.value.trim(), done:false });
+        ia.value = it.value = inEl.value = '';
+        save(); renderShelves(); renderManage(); updateStats();
+        toast('Added to shelf');
+      };
+      addRow.querySelector('button').addEventListener('click', doAdd);
+      [ia, it, inEl].forEach(i => i.addEventListener('keydown', e => { if(e.key==='Enter') doAdd(); }));
+      sBody.appendChild(addRow);
+
+      // delete shelf
+      const delBtn = document.createElement('button');
+      delBtn.className = 'del-shelf-btn';
+      delBtn.textContent = 'Delete this shelf';
+      delBtn.addEventListener('click', () => {
+        if (!confirm(`Delete shelf "${shelf.title}"? Cannot be undone.`)) return;
+        data[ri].shelves.splice(si, 1);
+        save(); renderShelves(); renderManage(); updateStats();
+        toast('Shelf removed');
+      });
+      sBody.appendChild(delBtn);
+
+      shelfBlock.appendChild(sHead);
+      shelfBlock.appendChild(sBody);
+      rBody.appendChild(shelfBlock);
+    });
+
+    // add-shelf-to-rack mini form
+    const addShelfRow = document.createElement('div');
+    addShelfRow.className = 'new-shelf-row';
+    addShelfRow.innerHTML = `
+      <input class="nsn" placeholder="New shelf name">
+      <input class="nsd" placeholder="Description (optional)">
+      <button>+ Add Shelf</button>
+    `;
+    addShelfRow.querySelector('button').addEventListener('click', () => {
+      const n = addShelfRow.querySelector('.nsn').value.trim();
+      const d = addShelfRow.querySelector('.nsd').value.trim();
+      if (!n) return;
+      data[ri].shelves.push({ title: n, desc: d, books: [] });
+      save(); renderShelves(); renderManage();
+      toast('Shelf added');
+    });
+    rBody.appendChild(addShelfRow);
+
+    // delete rack
+    const delRackBtn = document.createElement('button');
+    delRackBtn.className = 'del-shelf-btn';
+    delRackBtn.textContent = 'Delete this almirah';
+    delRackBtn.addEventListener('click', () => {
+      if (!confirm(`Delete almirah "${rack.title}" and all its shelves? Cannot be undone.`)) return;
+      data.splice(ri, 1);
+      save(); renderShelves(); renderManage(); updateStats();
+      toast('Almirah removed');
+    });
+    rBody.appendChild(delRackBtn);
+
+    rackBlock.appendChild(rHead);
+    rackBlock.appendChild(rBody);
+    container.appendChild(rackBlock);
   });
 }
 
-// ─── ADD SHELF ────────────────────────────────────────────────────────────────
-function addShelf() {
-  const n = document.getElementById('newShelfName').value.trim();
-  const d = document.getElementById('newShelfDesc').value.trim();
+// ─── ADD RACK (almirah) ─────────────────────────────────────────────────────────
+function addRack() {
+  const n     = document.getElementById('newRackName').value.trim();
+  const label = document.getElementById('newRackLabel').value.trim();
+  const d     = document.getElementById('newRackDesc').value.trim();
+  const th    = document.getElementById('newRackTheme').value || 'philosophy';
   if (!n) return;
-  data.push({ title:n, desc:d, books:[] });
-  document.getElementById('newShelfName').value = '';
-  document.getElementById('newShelfDesc').value = '';
+  data.push({ title: n, theme: th, label: label || undefined, shelves: [{ title: 'Shelf 1', desc: d, books: [] }] });
+  document.getElementById('newRackName').value = '';
+  document.getElementById('newRackLabel').value = '';
+  document.getElementById('newRackDesc').value = '';
+  currentRackIndex = data.length - 1;
+  saveActiveRack(currentRackIndex);
   save(); renderShelves(); renderManage();
-  toast('Shelf added');
+  toast('Almirah added');
 }
 
-// ─── EXPORT ───────────────────────────────────────────────────────────────────
+// ─── EXPORT (captures every key this app has saved to localStorage) ───────────
 function exportBackup() {
-  const json = JSON.stringify(data, null, 2);
+  const bundle = {
+    __meta: { app: 'Bibliotheca', format: 'full-backup-v1', exportedAt: new Date().toISOString() },
+    localStorage: {}
+  };
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      bundle.localStorage[k] = localStorage.getItem(k);
+    }
+  } catch (e) {}
+  const json = JSON.stringify(bundle, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const uri = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = uri;
-  a.download = `amits-library-${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `amits-library-full-backup-${new Date().toISOString().slice(0,10)}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(uri), 1000);
-  toast('Backup downloaded');
+  toast('Full backup downloaded');
 }
 
 // ─── IMPORT ───────────────────────────────────────────────────────────────────
@@ -699,11 +1330,24 @@ function importBackup(e) {
   reader.onload = ev => {
     try {
       const imported = JSON.parse(ev.target.result);
-      if (!Array.isArray(imported)) throw new Error();
-      if (!confirm('Replace current library with this backup?')) return;
-      data = imported;
-      ensureBookIds();
-      save(); renderShelves(); renderManage(); updateStats();
+      if (!confirm('Replace current library (and any other saved app data) with this backup?')) return;
+
+      if (Array.isArray(imported)) {
+        // legacy: library-only backup
+        data = migrateData(imported);
+        ensureBookIds(); save();
+      } else if (imported && imported.localStorage && typeof imported.localStorage === 'object') {
+        // full backup: restore every saved key (library, bookmarks, active almirah, etc.)
+        Object.keys(imported.localStorage).forEach(k => {
+          localStorage.setItem(k, imported.localStorage[k]);
+        });
+        data = load();
+        currentRackIndex = loadActiveRack();
+        ensureBookIds(); save();
+      } else {
+        throw new Error('Unrecognized backup format');
+      }
+      renderShelves(); renderManage(); updateStats();
       toast('Library restored');
     } catch {
       alert('Invalid backup file.');
@@ -731,6 +1375,7 @@ function esc(s) {
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 document.getElementById('exportBtn').addEventListener('click', exportBackup);
+updateStorageInfo();
 renderShelves();
 renderManage();
 </script>
