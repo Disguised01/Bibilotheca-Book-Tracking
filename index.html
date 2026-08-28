@@ -684,10 +684,19 @@ function migrateData(arr) {
 
 function load() {
   try {
-    const r = localStorage.getItem(KEY) || localStorage.getItem(LEGACY_KEY);
-    if (r) {
-      const migrated = migrateData(JSON.parse(r));
+    const current = localStorage.getItem(KEY);
+    const legacy = localStorage.getItem(LEGACY_KEY);
+    const currentData = current ? JSON.parse(current) : null;
+    const currentHasBooks = Array.isArray(currentData) && currentData.some(rack =>
+      Array.isArray(rack.shelves)
+        ? rack.shelves.some(shelf => Array.isArray(shelf.books) && shelf.books.length)
+        : Array.isArray(rack.books) && rack.books.length
+    );
+    const source = currentHasBooks ? currentData : legacy;
+    if (source) {
+      const migrated = migrateData(typeof source === 'string' ? JSON.parse(source) : source);
       if (!localStorage.getItem(KEY)) localStorage.setItem(KEY, JSON.stringify(migrated));
+      if (!currentData?.length) localStorage.setItem(KEY, JSON.stringify(migrated));
       return migrated;
     }
   } catch(e) {}

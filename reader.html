@@ -1248,10 +1248,18 @@ if (window.pdfjsLib) {
 
 function loadLibrary() {
   try {
-    const raw = localStorage.getItem(LIBRARY_KEY) || localStorage.getItem(LEGACY_LIBRARY_KEY);
+    const current = localStorage.getItem(LIBRARY_KEY);
+    const legacy = localStorage.getItem(LEGACY_LIBRARY_KEY);
+    const currentLibrary = current ? JSON.parse(current) : null;
+    const currentHasBooks = Array.isArray(currentLibrary) && currentLibrary.some(rack =>
+      Array.isArray(rack.shelves)
+        ? rack.shelves.some(shelf => Array.isArray(shelf.books) && shelf.books.length)
+        : Array.isArray(rack.books) && rack.books.length
+    );
+    const raw = currentHasBooks ? current : legacy;
     if (raw) {
-      const library = JSON.parse(raw);
-      if (!localStorage.getItem(LIBRARY_KEY)) localStorage.setItem(LIBRARY_KEY, JSON.stringify(library));
+      const library = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (!currentLibrary?.length) localStorage.setItem(LIBRARY_KEY, JSON.stringify(library));
       return library;
     }
   } catch (e) {}
