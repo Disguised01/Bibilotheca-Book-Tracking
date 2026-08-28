@@ -63,6 +63,11 @@ header h1 {
   position: relative; overflow: hidden;
 }
 .hbtn:hover { background: rgba(212,175,55,0.1); color: var(--gold); border-color: var(--gold); }
+.hbtn-link {
+  display: inline-block;
+  text-decoration: none;
+  line-height: 1.2;
+}
 .hbtn input[type=file] {
   position: absolute; inset: 0; width: 100%; height: 100%;
   opacity: 0; cursor: pointer; font-size: 0;
@@ -213,7 +218,8 @@ header h1 {
   width: 280px; transition: opacity 0.25s ease, transform 0.25s ease;
   transform: translateY(8px);
 }
-#book-card.active { opacity: 1; transform: translateY(0); }
+#book-card.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
+#book-card.pinned { transition: opacity 0.25s ease; }
 .card-inner {
   background: rgba(14,11,9,0.96); backdrop-filter: blur(16px);
   border: 1px solid rgba(212,175,55,0.28); border-radius: 8px;
@@ -223,6 +229,30 @@ header h1 {
 .card-title  { font-family: 'Cinzel', serif; font-size: 1.15rem; font-weight: 700; color: #f1e7d8; line-height: 1.2; margin-bottom: 12px; }
 .card-note   { font-size: 0.9rem; color: rgba(209,199,183,0.78); font-style: italic; border-top: 1px solid rgba(212,175,55,0.1); padding-top: 12px; min-height: 36px; line-height: 1.5; }
 .card-badge  { display: inline-block; margin-top: 12px; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 1px; padding: 2px 8px; border-radius: 4px; background: rgba(212,175,55,0.1); color: var(--gold); border: 1px solid rgba(212,175,55,0.2); }
+.card-progress { margin-top: 12px; color: rgba(209,199,183,0.72); font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: .06em; }
+.card-id-row {
+  display: flex; align-items: center; gap: 8px; margin-top: 10px;
+  padding-top: 10px; border-top: 1px solid rgba(212,175,55,0.1);
+}
+.card-id-label {
+  font-family: 'Cinzel', serif; font-size: 0.58rem; letter-spacing: .1em;
+  text-transform: uppercase; color: rgba(212,175,55,0.45);
+}
+.card-id {
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  letter-spacing: .14em;
+  color: #f1e7d8;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(212,175,55,0.22);
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  user-select: all;
+  transition: border-color .2s, color .2s;
+}
+.card-id:hover { border-color: var(--gold); color: var(--gold); }
+.card-id-hint { font-size: 0.55rem; color: rgba(212,175,55,0.28); letter-spacing: .04em; }
 .card-hint   { font-size: 0.6rem; color: rgba(212,175,55,0.3); margin-top: 8px; letter-spacing: .05em; }
 
 /* ── Manage panel ── */
@@ -334,8 +364,14 @@ header h1 {
     <div class="card-author" id="cardAuthor"></div>
     <div class="card-title"  id="cardTitle"></div>
     <div class="card-note"   id="cardNote"></div>
+    <div class="card-progress" id="cardProgress"></div>
     <div><span class="card-badge" id="cardBadge"></span></div>
-    <div class="card-hint">Click to mark read / unread</div>
+    <div class="card-id-row">
+      <span class="card-id-label">Book ID</span>
+      <button type="button" class="card-id" id="cardId" title="Click to copy">—</button>
+      <span class="card-id-hint">click to copy</span>
+    </div>
+    <div class="card-hint">Click spine to mark read / unread</div>
   </div>
 </div>
 
@@ -347,6 +383,7 @@ header h1 {
   <div class="ver">v4.0</div>
   <div class="stats" id="stats">— / — read</div>
   <div class="header-btns">
+    <a class="hbtn hbtn-link" href="reader.html">Reading table</a>
     <button class="hbtn" id="exportBtn">⬇ Export Backup</button>
     <span class="hbtn">
       ⬆ Import Backup
@@ -375,6 +412,7 @@ header h1 {
 <script>
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
 const KEY = 'amit-library-v4';
+const BOOKMARKS_KEY = 'bibliotheca-bookmarks';
 
 function load() {
   try {
@@ -389,6 +427,35 @@ function save() {
 }
 
 let data = load();
+
+function loadBookmarks() {
+  try {
+    const raw = localStorage.getItem(BOOKMARKS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return {};
+}
+
+function generateBookId() {
+  const used = new Set();
+  data.forEach(t => t.books.forEach(b => { if (b.id) used.add(b.id); }));
+  let id;
+  do { id = String(Math.floor(100000 + Math.random() * 900000)); } while (used.has(id));
+  return id;
+}
+
+function ensureBookIds() {
+  let changed = false;
+  data.forEach(t => t.books.forEach(b => {
+    if (!b.id || !/^\d{6}$/.test(b.id)) {
+      b.id = generateBookId();
+      changed = true;
+    }
+  }));
+  if (changed) save();
+}
+
+ensureBookIds();
 
 // ─── RENDER SHELVES ───────────────────────────────────────────────────────────
 function renderShelves() {
@@ -444,7 +511,7 @@ function renderShelves() {
 
       el.addEventListener('mouseenter', e => showCard(e, book));
       el.addEventListener('mousemove',  e => posCard(e));
-      el.addEventListener('mouseleave', hideCard);
+      el.addEventListener('mouseleave', leaveBookCard);
       el.addEventListener('click', () => {
         data[ti].books[bi].done = !data[ti].books[bi].done;
         save(); renderShelves(); renderManage(); updateStats();
@@ -469,23 +536,50 @@ function updateStats(total, done) {
 
 // ─── TOOLTIP ──────────────────────────────────────────────────────────────────
 const bookCard = document.getElementById('book-card');
+let cardPinned = false;
 
 function showCard(e, book) {
+  cardPinned = false;
+  bookCard.classList.remove('pinned');
   document.getElementById('cardAuthor').textContent = book.author;
   document.getElementById('cardTitle').textContent  = book.title;
   document.getElementById('cardNote').textContent   = book.note || '';
   document.getElementById('cardNote').style.display = book.note ? 'block' : 'none';
+  const bookmark = loadBookmarks()[book.id];
+  document.getElementById('cardProgress').textContent = bookmark
+    ? `${Math.round((bookmark.percentage || 0) * 100)}% bookmarked`
+    : 'Not started';
   document.getElementById('cardBadge').textContent  = book.done ? 'Read' : 'Unread';
+  const cardId = document.getElementById('cardId');
+  cardId.textContent = book.id || '—';
+  cardId.onclick = () => {
+    if (!book.id) return;
+    navigator.clipboard.writeText(book.id).then(() => toast('ID copied'));
+  };
   bookCard.classList.add('active');
   posCard(e);
 }
 function posCard(e) {
+  if (cardPinned) return;
   const cw = 280, ch = bookCard.offsetHeight || 180;
-  const x = e.clientX + 22, y = e.clientY - 20;
+  const x = e.clientX + 28, y = e.clientY - 24;
   bookCard.style.left = (x + cw > window.innerWidth  ? x - cw - 44 : x) + 'px';
   bookCard.style.top  = (y + ch > window.innerHeight ? y - ch      : y) + 'px';
 }
-function hideCard() { bookCard.classList.remove('active'); }
+function hideCard() {
+  cardPinned = false;
+  bookCard.classList.remove('active', 'pinned');
+}
+function leaveBookCard(e) {
+  if (e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('#book-card')) return;
+  hideCard();
+}
+
+bookCard.addEventListener('mouseenter', () => {
+  cardPinned = true;
+  bookCard.classList.add('pinned');
+});
+bookCard.addEventListener('mouseleave', leaveBookCard);
 
 // ─── MANAGE ───────────────────────────────────────────────────────────────────
 function renderManage() {
@@ -543,7 +637,7 @@ function renderManage() {
     const doAdd = () => {
       const a = ia.value.trim(), t = it.value.trim();
       if (!a || !t) return;
-      data[ti].books.push({ author:a, title:t, note:inEl.value.trim(), done:false });
+      data[ti].books.push({ id: generateBookId(), author:a, title:t, note:inEl.value.trim(), done:false });
       ia.value = it.value = inEl.value = '';
       save(); renderShelves(); renderManage(); updateStats();
       toast('Added to shelf');
@@ -608,6 +702,7 @@ function importBackup(e) {
       if (!Array.isArray(imported)) throw new Error();
       if (!confirm('Replace current library with this backup?')) return;
       data = imported;
+      ensureBookIds();
       save(); renderShelves(); renderManage(); updateStats();
       toast('Library restored');
     } catch {

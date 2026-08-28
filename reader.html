@@ -25,6 +25,12 @@
   --white: #fffdf8;
   --wood: #4a2418;
   --wood-dark: #2a120d;
+  --spread-max: 1200px;
+  --sticky-base: #e8dece;
+  --sticky-deep: #cfc0a8;
+  --sticky-ink: #4a3c30;
+  --sticky-muted: #7a6654;
+  --sticky-line: rgba(90, 68, 48, .14);
 }
 
 * { box-sizing: border-box; }
@@ -91,6 +97,11 @@ button { color: inherit; }
   font-size: 12px;
 }
 .breadcrumb strong { color: #f2dfc5; font-weight: 600; }
+.breadcrumb a {
+  color: #c6a88c;
+  text-decoration: none;
+}
+.breadcrumb a:hover { color: #f2dfc5; }
 .top-actions { display: flex; align-items: center; gap: 8px; }
 .icon-btn, .text-btn {
   border: 1px solid transparent;
@@ -138,18 +149,295 @@ button { color: inherit; }
 .notes {
   position: fixed;
   top: 50%;
-  right: max(6px, calc((100vw - 1020px) / 2 - 126px));
   z-index: 40;
-  width: 108px;
-  height: 86px;
-  min-height: 0;
-  padding: 10px 11px 9px;
-  border: 1px solid rgba(239, 194, 135, .22);
-  border-radius: 3px 5px 4px 3px;
-  background: linear-gradient(145deg, rgba(77, 38, 23, .8), rgba(38, 14, 9, .8));
-  box-shadow: 4px 7px 0 rgba(20, 7, 4, .25), 0 7px 14px rgba(10, 3, 2, .18), inset 0 1px rgba(255, 222, 174, .04);
-  transform: translateY(-50%) rotate(1deg);
+  width: 176px;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  transform: translateY(-50%) rotate(2.5deg);
 }
+@media (min-width: 1200px) {
+  .notes {
+    left: calc((100vw + var(--spread-max)) / 2 + 36px);
+    right: auto;
+  }
+}
+@media (max-width: 1199px) {
+  .notes {
+    right: 16px;
+    left: auto;
+  }
+}
+.sticky-pad {
+  position: relative;
+  padding: 30px 14px 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 246, .42) 0%, transparent 24%),
+    linear-gradient(158deg, #ebe3d4 0%, #dfd2bc 42%, #cfc0a6 100%);
+  border-radius: 2px 2px 4px 3px;
+  box-shadow:
+    1px 2px 0 rgba(74, 48, 28, .07),
+    3px 8px 0 rgba(74, 48, 28, .04),
+    8px 18px 28px rgba(20, 7, 4, .26),
+    0 0 0 1px rgba(190, 150, 90, .18);
+}
+.sticky-pad::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 22px;
+  height: 22px;
+  background: linear-gradient(225deg, transparent 48%, rgba(74, 48, 28, .06) 48%, rgba(74, 48, 28, .11) 100%);
+  pointer-events: none;
+}
+.sticky-pad::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 rgba(255, 252, 246, .5), inset 0 -14px 22px rgba(120, 90, 50, .07);
+  pointer-events: none;
+}
+.sticky-tape {
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  width: 54px;
+  height: 17px;
+  transform: translateX(-50%) rotate(-2deg);
+  background: linear-gradient(180deg, rgba(252, 246, 234, .88), rgba(235, 220, 198, .72));
+  border: 1px solid rgba(190, 150, 90, .28);
+  box-shadow: 0 1px 2px rgba(20, 7, 4, .12);
+  pointer-events: none;
+}
+.notes.no-book { opacity: .72; pointer-events: none; }
+.notes-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
+.notes-title { font-family: 'Newsreader', serif; font-size: 15px; line-height: 1.05; color: var(--sticky-ink); font-weight: 600; }
+.notes-count { color: var(--sticky-muted); font-family: 'DM Mono', monospace; font-size: 7px; letter-spacing: .04em; text-align: right; }
+.notes-page-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--sticky-muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.notes-input {
+  width: 100%;
+  min-height: 78px;
+  margin: 0;
+  padding: 8px 7px;
+  border: 0;
+  border-top: 1px solid var(--sticky-line);
+  border-radius: 1px;
+  color: var(--sticky-ink);
+  background:
+    repeating-linear-gradient(transparent, transparent 17px, var(--sticky-line) 17px, var(--sticky-line) 18px),
+    rgba(248, 242, 232, .72);
+  resize: vertical;
+  font-family: 'Newsreader', serif;
+  font-size: 12px;
+  line-height: 18px;
+  box-shadow: inset 0 1px 3px rgba(74, 48, 28, .05);
+}
+.notes-input::placeholder { color: rgba(90, 68, 48, .38); }
+.notes-input:focus { outline: none; box-shadow: inset 0 1px 3px rgba(74, 48, 28, .08), 0 0 0 1px rgba(190, 150, 90, .28); }
+.notes-actions { display: flex; gap: 6px; margin-top: 10px; }
+.notes-btn {
+  flex: 1;
+  padding: 6px 4px;
+  border: 1px solid rgba(190, 150, 90, .32);
+  border-radius: 2px;
+  color: var(--sticky-ink);
+  background: rgba(248, 242, 232, .45);
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  box-shadow: 1px 2px 0 rgba(74, 48, 28, .06);
+}
+.notes-btn:hover { background: rgba(255, 252, 246, .82); border-color: rgba(190, 91, 54, .35); color: var(--accent-dark); }
+.notes-btn-secondary { flex: 1.15; }
+.book-id-block { margin-top: 20px; }
+.book-id-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.book-id-value {
+  flex: 1;
+  min-width: 72px;
+  padding: 8px 10px;
+  border: 1px solid rgba(235, 180, 109, .35);
+  border-radius: 5px;
+  color: #f0c486;
+  background: rgba(20, 7, 4, .35);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  letter-spacing: .12em;
+  text-align: center;
+  cursor: pointer;
+  user-select: all;
+}
+.book-id-input {
+  flex: 1;
+  min-width: 72px;
+  padding: 8px 10px;
+  border: 1px solid rgba(235, 180, 109, .28);
+  border-radius: 5px;
+  color: #f2dfc5;
+  background: rgba(20, 7, 4, .35);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: .1em;
+}
+.book-id-input:focus { outline: none; border-color: #edb46d; }
+.book-id-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px 10px;
+  border: 1px solid rgba(235, 180, 109, .35);
+  border-radius: 5px;
+  color: #e5bb82;
+  background: rgba(255, 214, 157, .08);
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.book-id-btn:hover { background: rgba(255, 214, 157, .16); }
+.book-id-hint { margin-top: 8px; color: #a98368; font-size: 10px; line-height: 1.5; }
+.book-id-warn { margin-top: 6px; color: #d6a35f; font-size: 10px; line-height: 1.45; }
+.notes-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.notes-modal[hidden] { display: none; }
+.notes-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 3, 2, .72);
+  backdrop-filter: blur(4px);
+}
+.notes-modal-panel {
+  position: relative;
+  width: min(100%, 420px);
+  max-height: min(80vh, 560px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(239, 194, 135, .25);
+  border-radius: 8px;
+  background: rgba(38, 14, 9, .98);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, .55);
+}
+.notes-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(239, 194, 135, .15);
+}
+.notes-modal-head h2 {
+  margin: 0;
+  color: #f2dfc5;
+  font-family: 'Newsreader', serif;
+  font-size: 18px;
+  font-weight: 500;
+}
+.notes-modal-close {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  color: #c6a88c;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+}
+.notes-modal-close:hover { color: #fff3df; background: rgba(255, 226, 181, .1); }
+.notes-modal-list {
+  overflow-y: auto;
+  padding: 12px 14px 16px;
+  display: grid;
+  gap: 10px;
+}
+.notes-modal-empty {
+  padding: 24px 8px;
+  color: #a98368;
+  font-size: 13px;
+  text-align: center;
+  font-style: italic;
+}
+.all-note-item {
+  padding: 12px 14px;
+  border-radius: 4px;
+  background: #ebe3d4;
+  color: var(--sticky-ink);
+  cursor: pointer;
+  box-shadow: 2px 3px 0 rgba(39, 37, 33, .06);
+  border: 1px solid rgba(190, 150, 90, .12);
+  transition: transform .15s ease;
+}
+.all-note-item:hover { transform: translateY(-2px); }
+.all-note-item:nth-child(even) { background: #e8d8cc; }
+.all-note-item:nth-child(3n) { background: #dfe8dc; }
+.all-note-page {
+  margin-bottom: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  opacity: .65;
+}
+.all-note-text {
+  font-family: 'Newsreader', serif;
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+.all-note-del {
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  color: rgba(56, 41, 31, .5);
+  background: transparent;
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.all-note-del:hover { color: #893d28; }
+.reader-toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  z-index: 300;
+  padding: 10px 16px;
+  border: 1px solid rgba(239, 194, 135, .3);
+  border-radius: 4px;
+  color: #f0c486;
+  background: rgba(38, 14, 9, .95);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(8px);
+  transition: opacity .25s, transform .25s;
+}
+.reader-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .eyebrow {
   margin: 0 0 15px;
   color: #c6a88c;
@@ -222,6 +510,13 @@ button { color: inherit; }
   text-transform: uppercase;
 }
 .library-toggle:hover { background: rgba(255, 226, 181, .12); }
+.view-switch {
+  display: inline-flex;
+  align-items: center;
+  height: 38px;
+  text-decoration: none;
+  line-height: 1;
+}
 .reader-toolbar {
   height: 64px;
   display: flex;
@@ -230,9 +525,41 @@ button { color: inherit; }
   padding: 0 30px;
   border-bottom: 1px solid rgba(239, 194, 135, .15);
 }
-.reader-position { color: #c6a88c; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .05em; }
+.reader-position-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  max-width: min(52vw, 520px);
+}
+.reader-position-main {
+  color: #f2dfc5;
+  font-family: 'Newsreader', serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reader-position-sub {
+  color: #c6a88c;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .04em;
+  line-height: 1.35;
+}
+.reader-position-sub[hidden] { display: none; }
+.reader-position-pdf {
+  color: #c6a88c;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .05em;
+}
 .reader-controls { display: flex; align-items: center; gap: 3px; }
 .reader-controls .icon-btn { width: 32px; height: 32px; font-size: 15px; }
+.reader-controls .bookmark-btn { color: #d6a35f; }
+.reader-controls .bookmark-btn.is-bookmarked { color: #f3c968; background: rgba(214, 163, 95, .16); }
 .progress { height: 3px; background: rgba(20, 7, 4, .38); }
 .progress span { display: block; width: 38%; height: 100%; background: #d6a35f; }
 .page-stage {
@@ -242,30 +569,76 @@ button { color: inherit; }
   place-items: center;
   width: auto;
   height: auto;
-  padding: 8px 28px 0;
+  min-height: 0;
+  padding: 6px 12px 20px;
   perspective: 1200px;
 }
-.book-spread {
+.book-frame {
   position: relative;
-  width: min(100%, 1020px);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  width: min(calc(100vw - 48px), var(--spread-max));
+  max-width: var(--spread-max);
   filter: drop-shadow(0 22px 18px rgba(18, 5, 3, .42));
-  transform: rotateX(2deg);
 }
-.book-spread {
-  transform: none !important;
-  filter: none !important;
+.bookmark-ribbon {
+  position: absolute;
+  top: -2px;
+  bottom: -32px;
+  left: 50%;
+  z-index: 6;
+  width: 15px;
+  background: #b9362b;
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 100%,
+    50% 96%,
+    0 100%
+  );
+  transform: translateX(-50%) translateY(-4px) scaleY(0);
+  transform-origin: top center;
+  opacity: 0;
+  box-shadow: 2px 4px 5px rgba(35,10,5,.22);
+  pointer-events: none;
+  transition: transform .55s cubic-bezier(.23,1,.32,1), opacity .18s ease;
 }
-.book-spread::before {
+.bookmark-ribbon::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 2px;
+  background: rgba(255,255,255,.2);
+  opacity: .35;
+}
+.book-frame.bookmarked .bookmark-ribbon { opacity: 1; transform: translateX(-50%) translateY(-4px) scaleY(1); }
+.book-frame.bookmarked .book-spread { animation: bookmark-close .5s ease both; }
+@keyframes bookmark-close {
+  0% { transform: perspective(1200px) rotateY(0) scaleX(1); }
+  45% { transform: perspective(1200px) rotateY(3deg) scaleX(.975); }
+  100% { transform: none; }
+}
+.book-frame::before {
   content: '';
   position: absolute;
   inset: -11px -12px -17px;
   border-radius: 10px;
   background: linear-gradient(90deg, #2a120d, #57291c 12%, #3b1a12 50%, #542419 88%, #29110c);
   box-shadow: 0 24px 28px rgba(8, 2, 1, .5), inset 0 0 0 1px rgba(214, 163, 95, .32);
-  z-index: -3;
+  z-index: 0;
+  pointer-events: none;
 }
+.book-spread {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 0;
+}
+.book-spread {
+  transform: none !important;
+}
+.book-spread::before { content: none; }
 .book-spread::after {
   content: '';
   position: absolute;
@@ -281,9 +654,9 @@ button { color: inherit; }
 }
 .page {
   position: relative;
-  height: min(880px, calc(100vh - 120px));
-  min-height: 500px;
-  padding: 40px clamp(25px, 5vw, 62px) 45px;
+  height: min(760px, calc(100vh - 128px));
+  min-height: 460px;
+  padding: 36px clamp(28px, 4.5vw, 72px) 40px;
   overflow: visible;
   isolation: isolate;
   background: #f9f0df;
@@ -341,52 +714,137 @@ button { color: inherit; }
 .page p:first-of-type::first-letter { float: left; padding: 8px 8px 0 0; color: var(--accent); font-size: 64px; line-height: .72; }
 .page blockquote { margin: 30px 0; padding-left: 18px; border-left: 2px solid var(--accent); font-family: 'Newsreader', serif; font-size: 18px; font-style: italic; line-height: 1.35; }
 .page-number { margin-top: 68px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 10px; text-align: center; }
-.viewer-page { display: grid; grid-column: 1 / -1; place-items: center; min-height: 100%; padding: 16px; }
-#epubViewer { width: 100%; height: 100%; min-height: 0; overflow: hidden; grid-column: 1 / -1; }
-#epubViewer .epub-container { width: 100% !important; height: 100% !important; overflow: hidden; }
-#epubViewer iframe { display: block; border: 0; overflow: hidden; }
-#pdfViewer { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: center; justify-items: center; gap: 14px; width: 100%; height: 100%; min-height: 0; overflow: auto; grid-column: 1 / -1; }
-#pdfCanvas, #pdfCanvasNext { display: block; min-width: 0; box-shadow: 0 4px 14px rgba(39, 37, 33, .16); }
-.reader-empty { max-width: 280px; color: var(--muted); text-align: center; }
+.page.viewer-page {
+  grid-column: 1 / -1;
+  padding: 10px 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  min-height: 0;
+}
+.viewer-surface {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  background: #f9f0df;
+  scrollbar-width: none;
+}
+.viewer-surface { cursor: e-resize; }
+.viewer-surface:has(#epubViewer:not([hidden])) { cursor: default; }
+.viewer-surface::-webkit-scrollbar { display: none; width: 0; height: 0; }
+#epubViewer { scrollbar-width: none; }
+#epubViewer::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.viewer-surface > #epubViewer,
+.viewer-surface > #pdfViewer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+#epubViewer {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+#epubViewer[hidden],
+#pdfViewer[hidden] {
+  display: none !important;
+}
+#epubViewer .epub-container {
+  overflow: hidden;
+}
+#epubViewer iframe {
+  display: block;
+  border: 0;
+}
+#pdfViewer {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  justify-items: center;
+  gap: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 0;
+  background: #f9f0df;
+}
+#pdfCanvas, #pdfCanvasNext {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  max-height: 100%;
+  box-shadow: 0 4px 14px rgba(39, 37, 33, .16);
+}
+.reader-empty:not([hidden]),
+.reader-error:not([hidden]) {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  text-align: center;
+}
+.reader-empty[hidden],
+.reader-error[hidden] {
+  display: none !important;
+}
+.reader-empty {
+  color: var(--muted);
+}
 .reader-empty strong { display: block; margin-bottom: 9px; color: var(--ink); font-family: 'Newsreader', serif; font-size: 24px; font-weight: 500; }
 .reader-empty span { display: block; font-size: 12px; line-height: 1.6; }
-.reader-error { color: var(--accent-dark); font-size: 12px; text-align: center; }
-
-.notes-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
-.notes-title { font-family: 'Newsreader', serif; font-size: 14px; line-height: 1; }
-.notes-count { display: block; margin-top: 5px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 7px; letter-spacing: 0; }
-.note-card { position: relative; margin-bottom: 11px; padding: 15px; border: 1px solid rgba(39, 37, 33, .1); border-radius: 4px; background: #f8dcae; box-shadow: 2px 3px 0 rgba(39, 37, 33, .06); }
-.note-card:nth-of-type(2) { background: #d5e2d0; transform: rotate(1deg); }
-.note-card:nth-of-type(3) { background: #edc5b5; transform: rotate(-1deg); }
-.note-card p { margin: 0 0 13px; font-family: 'Newsreader', serif; font-size: 16px; line-height: 1.35; }
-.note-meta { display: flex; align-items: center; justify-content: space-between; color: rgba(39, 37, 33, .54); font-family: 'DM Mono', monospace; font-size: 9px; }
-.add-note { width: 100%; margin-top: 13px; padding: 12px; border: 1px dashed #b8aa96; border-radius: 4px; color: var(--muted); background: transparent; cursor: pointer; font-size: 11px; }
-.add-note:hover { border-color: var(--accent); color: var(--accent-dark); }
-.bookmark-status { display: flex; align-items: center; gap: 8px; margin-top: 32px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
-.bookmark-status span { color: var(--accent); font-size: 17px; }
-.notes-header { margin: 0; cursor: default; }
-.notes-header[role="button"] { cursor: pointer; }
-.notes-content { display: block; padding-top: 6px; }
-.notes .note-card, .notes .add-note, .notes .bookmark-status { display: none; }
-.note-swatches { display: grid; gap: 5px; }
-.note-swatches span { display: block; height: 5px; border-radius: 1px; box-shadow: 1px 1px 2px rgba(10, 3, 2, .3); }
-.note-swatches .yellow { background: #e5c15d; }
-.note-swatches .rose { background: #edc5b5; }
-.note-swatches .sage { background: #d5e2d0; }
-.notes-hide { display: block; width: 100%; margin-top: 3px; padding: 2px 0; border: 0; color: #b99672; background: transparent; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 7px; line-height: 1; text-align: left; }
-.notes-hide:hover { color: #f0c486; }
+.reader-error {
+  color: var(--accent-dark);
+  font-size: 12px;
+}
 
 body.dark-mode { --paper: #211d19; --paper-deep: #332b24; --line: rgba(244, 225, 195, .16); --muted: #b6a999; }
 .dark-mode .topbar { background: rgba(18, 8, 5, .86); }
-.dark-mode .sidebar, .dark-mode .notes { background: rgba(25, 10, 6, .48); }
+.dark-mode .sidebar { background: rgba(25, 10, 6, .48); }
+.dark-mode .notes-input { color: var(--sticky-ink); }
+.dark-mode .notes .sticky-pad {
+  background:
+    linear-gradient(180deg, rgba(255, 252, 246, .08) 0%, transparent 24%),
+    linear-gradient(158deg, #9a8868 0%, #8a7858 42%, #7a6848 100%);
+  box-shadow:
+    1px 2px 0 rgba(20, 7, 4, .2),
+    8px 18px 28px rgba(0, 0, 0, .35),
+    0 0 0 1px rgba(190, 150, 90, .22);
+}
+.dark-mode .notes-title,
+.dark-mode .notes-page-label,
+.dark-mode .notes-count { color: #f0e6d6; }
+.dark-mode .notes-count { opacity: .72; }
+.dark-mode .notes-input {
+  color: #3a2e24;
+  background:
+    repeating-linear-gradient(transparent, transparent 17px, rgba(90, 68, 48, .12) 17px, rgba(90, 68, 48, .12) 18px),
+    rgba(248, 242, 232, .78);
+}
+.dark-mode .notes-btn {
+  color: #4a3c30;
+  background: rgba(248, 242, 232, .55);
+}
 .dark-mode .page { background: #28231e; color: #eadfce; box-shadow: inset -12px 0 25px rgba(0, 0, 0, .16); }
+.dark-mode .viewer-surface,
+.dark-mode #pdfViewer { background: #28231e; }
 .dark-mode .page + .page { box-shadow: inset 12px 0 25px rgba(0, 0, 0, .16); }
 .dark-mode .page h1 { color: #eadfce; }
-.dark-mode .note-card { color: #2d251f; }
 .dark-mode #pdfCanvas, .dark-mode #pdfCanvasNext { filter: invert(1) hue-rotate(180deg); }
 
 @media (max-width: 980px) {
-  .notes { right: 16px; }
+  .notes { right: 16px; left: auto; }
 }
 @media (max-width: 680px) {
   .app { display: block; }
@@ -395,14 +853,16 @@ body.dark-mode { --paper: #211d19; --paper-deep: #332b24; --line: rgba(244, 225,
   .sidebar { top: 64px; width: min(280px, 88vw); left: calc(-1 * min(280px, 88vw) - 12px); }
   .sidebar.open { left: 0; }
   .library-toggle { padding: 0 9px; font-size: 9px; }
-  .notes { top: 50%; right: 12px; }
+  .notes { top: 50%; right: 12px; left: auto; width: min(176px, 42vw); transform: translateY(-50%) rotate(1.5deg); }
   .reader-toolbar { height: 56px; padding: 0 16px; }
   .page-stage { padding: 22px 12px 45px; }
-  .book-spread { grid-template-columns: 1fr; width: min(100%, 520px); transform: none; }
+  .book-frame { width: min(100%, 580px); }
+  .book-spread { grid-template-columns: 1fr; width: 100%; transform: none; }
   .book-spread::after { display: none; }
   .page:first-child, .page:last-child { border-radius: 5px; transform: none; }
   .page + .page { margin-top: 18px; }
   .page.right-page { padding-top: 48px; }
+  .page.viewer-page { padding: 8px 10px; overflow: hidden; }
   .page { height: auto; min-height: 680px; padding: 48px 28px 60px; overflow: visible; }
   .page h1 { font-size: 34px; }
   .page p { font-size: 17px; }
@@ -415,9 +875,10 @@ body.dark-mode { --paper: #211d19; --paper-deep: #332b24; --line: rgba(244, 225,
 <div class="app">
   <header class="topbar">
     <div class="brand"><span class="brand-mark">B</span> Bibliotheca</div>
-    <div class="breadcrumb"><span>Reading room</span><span>/</span><strong id="bookTitle">No book loaded</strong></div>
+    <div class="breadcrumb"><a href="index.html">Library shelf</a><span>/</span><span>Reading table</span><span>/</span><strong id="bookTitle">No book loaded</strong></div>
     <div class="top-actions">
-      <button class="icon-btn library-toggle" id="libraryToggle" aria-expanded="false">☰ Library</button>
+      <a class="library-toggle view-switch" href="index.html">Library shelf</a>
+      <button class="icon-btn library-toggle" id="libraryToggle" aria-expanded="false">☰ Books</button>
       <button class="icon-btn" aria-label="Search">⌕</button>
       <button class="icon-btn" id="themeToggle" aria-label="Toggle dark mode">☾</button>
       <span class="avatar" aria-label="Profile">A</span>
@@ -437,12 +898,31 @@ body.dark-mode { --paper: #211d19; --paper-deep: #332b24; --line: rgba(244, 225,
     <div class="library-list" id="currentBookList">
       <div class="library-meta">No book loaded</div>
     </div>
+    <div class="book-id-block" id="bookIdBlock" hidden>
+      <p class="eyebrow">Shelf book ID</p>
+      <div id="bookIdLinked" hidden>
+        <div class="book-id-row">
+          <span class="book-id-value" id="linkedBookId">—</span>
+        </div>
+        <button type="button" class="book-id-btn" id="changeBookIdBtn">Change ID</button>
+      </div>
+      <div id="bookIdUnlinked" hidden>
+        <p class="book-id-warn">No matching shelf book. Enter the 6-digit ID from the library shelf.</p>
+        <input type="text" class="book-id-input" id="bookIdInput" maxlength="6" inputmode="numeric" pattern="\d{6}" placeholder="e.g. 482917">
+        <button type="button" class="book-id-btn" id="assignBookIdBtn">Assign book ID</button>
+        <p class="book-id-hint">Hover a book on the shelf to see and copy its ID.</p>
+      </div>
+    </div>
     <p class="sidebar-footer">Your books stay on this device.<br>Nothing is uploaded anywhere.</p>
   </aside>
 
   <main class="reader">
     <div class="reader-toolbar">
-      <span class="reader-position">NO BOOK LOADED</span>
+      <div class="reader-position-wrap">
+        <span class="reader-position-pdf" id="readerPositionPdf">NO BOOK LOADED</span>
+        <span class="reader-position-main" id="readerPositionMain" hidden></span>
+        <span class="reader-position-sub" id="readerPositionSub" hidden></span>
+      </div>
       <div class="reader-controls">
         <button class="icon-btn" aria-label="Previous page">←</button>
         <button class="icon-btn" aria-label="Toggle bookmark">♡</button>
@@ -451,36 +931,72 @@ body.dark-mode { --paper: #211d19; --paper-deep: #332b24; --line: rgba(244, 225,
     </div>
     <div class="progress"><span></span></div>
     <section class="page-stage">
-      <div class="book-spread">
-        <article class="page viewer-page" id="viewerPage">
-          <div class="reader-empty" id="readerEmpty">
-            <strong>Your reading room is empty</strong>
-            <span>Open an EPUB or PDF from the Library panel to begin.</span>
-          </div>
-          <div id="epubViewer" hidden></div>
-          <div id="pdfViewer" hidden>
-            <canvas id="pdfCanvas"></canvas>
-            <canvas id="pdfCanvasNext"></canvas>
-          </div>
-          <div class="reader-error" id="readerError" hidden></div>
-        </article>
+      <div class="book-frame" id="bookFrame">
+        <span class="bookmark-ribbon" aria-hidden="true"></span>
+        <div class="book-spread">
+          <article class="page viewer-page" id="viewerPage">
+            <div class="viewer-surface" id="viewerSurface">
+              <div class="reader-empty" id="readerEmpty">
+                <strong>Your reading table is empty</strong>
+                <span>Open an EPUB or PDF from the Books panel to begin.</span>
+              </div>
+              <div id="epubViewer" hidden></div>
+              <div id="pdfViewer" hidden>
+                <canvas id="pdfCanvas"></canvas>
+                <canvas id="pdfCanvasNext"></canvas>
+              </div>
+              <div class="reader-error" id="readerError" hidden></div>
+            </div>
+          </article>
+        </div>
       </div>
     </section>
   </main>
 
-  <aside class="notes">
-    <div class="notes-header" role="button" tabindex="0" aria-label="Show note for current page"><span class="notes-title">Sticky<br>notes</span><span class="notes-count">0 NOTES</span></div>
-    <div class="notes-content">
+  <aside class="notes" id="notesPanel">
+    <div class="sticky-pad">
+      <span class="sticky-tape" aria-hidden="true"></span>
+      <div class="notes-header">
+        <span class="notes-title">Sticky<br>notes</span>
+        <span class="notes-count" id="notesCount">0 NOTES</span>
+      </div>
+      <label class="notes-page-label" id="notesPageLabel" for="pageNoteInput">Page —</label>
+      <textarea id="pageNoteInput" class="notes-input" placeholder="Write a note for this page…" rows="4"></textarea>
+      <div class="notes-actions">
+        <button type="button" class="notes-btn" id="saveNoteBtn">Save</button>
+        <button type="button" class="notes-btn notes-btn-secondary" id="allNotesBtn">All notes</button>
+      </div>
     </div>
   </aside>
+
+  <div class="notes-modal" id="notesModal" hidden>
+    <div class="notes-modal-backdrop" id="notesModalBackdrop"></div>
+    <div class="notes-modal-panel">
+      <div class="notes-modal-head">
+        <h2 id="allNotesTitle">All sticky notes</h2>
+        <button type="button" class="notes-modal-close" id="closeNotesModal" aria-label="Close">✕</button>
+      </div>
+      <div class="notes-modal-list" id="allNotesList"></div>
+    </div>
+  </div>
+
+  <div class="reader-toast" id="readerToast"></div>
 </div>
 <script>
+const LIBRARY_KEY = 'amit-library-v4';
+const NOTES_KEY = 'bibliotheca-sticky-notes';
+const MAPPINGS_KEY = 'bibliotheca-reader-mappings';
+const BOOKMARKS_KEY = 'bibliotheca-bookmarks';
+
 const themeToggle = document.getElementById('themeToggle');
 const libraryToggle = document.getElementById('libraryToggle');
 const sidebar = document.querySelector('.sidebar');
-const readerPosition = document.querySelector('.reader-position');
+const readerPositionPdf = document.getElementById('readerPositionPdf');
+const readerPositionMain = document.getElementById('readerPositionMain');
+const readerPositionSub = document.getElementById('readerPositionSub');
 const readerEmpty = document.getElementById('readerEmpty');
 const readerError = document.getElementById('readerError');
+const viewerSurface = document.getElementById('viewerSurface');
 const epubViewer = document.getElementById('epubViewer');
 const pdfCanvas = document.getElementById('pdfCanvas');
 const pdfViewer = document.getElementById('pdfViewer');
@@ -491,21 +1007,603 @@ const progressBar = document.querySelector('.progress span');
 const bookUpload = document.getElementById('bookUpload');
 const pageButtons = document.querySelectorAll('.reader-controls .icon-btn');
 const previousButton = pageButtons[0];
+const bookmarkButton = pageButtons[1];
 const nextButton = pageButtons[2];
+const bookFrame = document.getElementById('bookFrame');
+const notesPanel = document.getElementById('notesPanel');
+const notesCount = document.getElementById('notesCount');
+const notesPageLabel = document.getElementById('notesPageLabel');
+const pageNoteInput = document.getElementById('pageNoteInput');
+const saveNoteBtn = document.getElementById('saveNoteBtn');
+const allNotesBtn = document.getElementById('allNotesBtn');
+const notesModal = document.getElementById('notesModal');
+const notesModalBackdrop = document.getElementById('notesModalBackdrop');
+const closeNotesModal = document.getElementById('closeNotesModal');
+const allNotesList = document.getElementById('allNotesList');
+const allNotesTitle = document.getElementById('allNotesTitle');
+const bookIdBlock = document.getElementById('bookIdBlock');
+const bookIdLinked = document.getElementById('bookIdLinked');
+const bookIdUnlinked = document.getElementById('bookIdUnlinked');
+const linkedBookId = document.getElementById('linkedBookId');
+const changeBookIdBtn = document.getElementById('changeBookIdBtn');
+const bookIdInput = document.getElementById('bookIdInput');
+const assignBookIdBtn = document.getElementById('assignBookIdBtn');
+const readerToast = document.getElementById('readerToast');
+
 let epubRendition = null;
+let epubBook = null;
+let epubNavigation = null;
+let epubBookTotalLocations = 0;
 let pdfDocument = null;
 let pdfPageNumber = 1;
 let readerType = null;
-const readingScale = 1.05;
+let currentPage = 0;
+let currentTotalPages = 0;
+let currentBookId = null;
+let currentFileName = null;
+let currentDisplayTitle = '';
+let currentProgress = 0;
+let currentLocationCfi = null;
+const readingScale = 1.0;
+
+function getViewerDimensions() {
+  const width = Math.floor(viewerSurface.clientWidth);
+  const height = Math.floor(viewerSurface.clientHeight);
+  return {
+    width: Math.max(width, 320),
+    height: Math.max(height, 420)
+  };
+}
+
+const EPUB_THEMES = {
+  light: {
+    htmlBg: '#f9f0df',
+    bodyBg: '#f9f0df',
+    bodyColor: '#272521',
+    linkColor: '#be5b36',
+    headingColor: '#272521'
+  },
+  dark: {
+    htmlBg: '#28231e',
+    bodyBg: '#28231e',
+    bodyColor: '#eadfce',
+    linkColor: '#d6a35f',
+    headingColor: '#eadfce'
+  }
+};
+
+const EPUB_BASE_BODY = {
+  'font-family': "'Newsreader', Georgia, serif",
+  'font-size': '100%',
+  'line-height': '1.55',
+  margin: '0',
+  padding: '18px 22px 28px',
+  'box-sizing': 'border-box',
+  '-webkit-font-smoothing': 'antialiased',
+  'text-rendering': 'optimizeLegibility'
+};
+
+function getActiveEpubThemeName() {
+  return document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+}
+
+function applyEpubThemeToDocument(doc, themeName) {
+  if (!doc) return;
+  const theme = EPUB_THEMES[themeName];
+  const html = doc.documentElement;
+  const body = doc.body;
+  if (html) {
+    html.style.setProperty('background', theme.htmlBg, 'important');
+    html.style.setProperty('margin', '0', 'important');
+    html.style.setProperty('padding', '0', 'important');
+  }
+  if (body) {
+    Object.entries(EPUB_BASE_BODY).forEach(([key, value]) => {
+      body.style.setProperty(key, value, 'important');
+    });
+    body.style.setProperty('background', theme.bodyBg, 'important');
+    body.style.setProperty('color', theme.bodyColor, 'important');
+    body.dataset.readerTheme = themeName;
+  }
+  doc.querySelectorAll('a').forEach(el => {
+    el.style.setProperty('color', theme.linkColor, 'important');
+  });
+  doc.querySelectorAll('h1, h2, h3, h4').forEach(el => {
+    el.style.setProperty('color', theme.headingColor, 'important');
+  });
+  doc.querySelectorAll('img').forEach(el => {
+    el.style.setProperty('max-width', '100%', 'important');
+    el.style.setProperty('height', 'auto', 'important');
+  });
+}
+
+function applyReaderTheme() {
+  if (!epubRendition) return;
+  const themeName = getActiveEpubThemeName();
+  try { epubRendition.themes.select(themeName); } catch (e) {}
+  epubRendition.getContents().forEach(content => {
+    applyEpubThemeToDocument(content.document, themeName);
+  });
+}
+
+function registerEpubThemes() {
+  if (!epubRendition) return;
+  const type = "'Newsreader', Georgia, serif";
+  epubRendition.themes.register('light', {
+    html: { background: '#f9f0df !important', margin: '0 !important', padding: '0 !important' },
+    body: {
+      color: '#272521 !important',
+      background: '#f9f0df !important',
+      'font-family': `${type} !important`,
+      'font-size': '100% !important',
+      'line-height': '1.55 !important',
+      margin: '0 !important',
+      padding: '18px 22px 28px !important',
+      'box-sizing': 'border-box !important',
+      '-webkit-font-smoothing': 'antialiased',
+      'text-rendering': 'optimizeLegibility'
+    },
+    a: { color: '#be5b36 !important' },
+    'h1, h2, h3, h4': {
+      color: '#272521 !important',
+      'page-break-after': 'avoid !important',
+      'page-break-inside': 'avoid !important',
+      'break-after': 'avoid-page !important',
+      'break-inside': 'avoid !important'
+    },
+    p: { margin: '0 0 0.75em 0 !important' },
+    img: { 'max-width': '100% !important', height: 'auto !important' }
+  });
+  epubRendition.themes.register('dark', {
+    html: { background: '#28231e !important', margin: '0 !important', padding: '0 !important' },
+    body: {
+      color: '#eadfce !important',
+      background: '#28231e !important',
+      'font-family': `${type} !important`,
+      'font-size': '100% !important',
+      'line-height': '1.55 !important',
+      margin: '0 !important',
+      padding: '18px 22px 28px !important',
+      'box-sizing': 'border-box !important',
+      '-webkit-font-smoothing': 'antialiased',
+      'text-rendering': 'optimizeLegibility'
+    },
+    a: { color: '#d6a35f !important' },
+    'h1, h2, h3, h4': {
+      color: '#eadfce !important',
+      'page-break-after': 'avoid !important',
+      'page-break-inside': 'avoid !important',
+      'break-after': 'avoid-page !important',
+      'break-inside': 'avoid !important'
+    },
+    p: { margin: '0 0 0.75em 0 !important' },
+    img: { 'max-width': '100% !important', height: 'auto !important' }
+  });
+}
+
+function destroyEpub() {
+  if (epubRendition) {
+    try { epubRendition.destroy(); } catch (e) {}
+    epubRendition = null;
+  }
+  epubViewer.innerHTML = '';
+  epubBook = null;
+  epubNavigation = null;
+  epubBookTotalLocations = 0;
+}
+
+function waitForLayout() {
+  return new Promise(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  });
+}
+
+function resizeEpubViewer() {
+  if (!epubRendition) return;
+  const { width, height } = getViewerDimensions();
+  epubRendition.resize(width, height);
+}
+
+function navigateFromSurface(clientX) {
+  if (!readerType || !viewerSurface.clientWidth) return;
+  if (readerType === 'epub') {
+    nextButton.click();
+    return;
+  }
+  if (clientX < viewerSurface.getBoundingClientRect().left + viewerSurface.clientWidth / 2) {
+    previousButton.click();
+  } else {
+    nextButton.click();
+  }
+}
+
+function handleReaderSurfaceClick(event) {
+  if (event.defaultPrevented || event.detail === 0 || window.getSelection()?.toString()) return;
+  if (event.target.closest?.('a, button, textarea, input, .page-note-tab, .attached-note')) return;
+  navigateFromSurface(event.clientX);
+}
+
+function bindEpubSurfaceClicks() {
+  if (!epubRendition) return;
+  epubRendition.getContents().forEach(content => {
+    if (content.document.__readerSurfaceClickBound) return;
+    content.document.__readerSurfaceClickBound = true;
+    content.document.addEventListener('click', event => {
+      if (event.defaultPrevented || content.window.getSelection()?.toString() || event.target.closest?.('a, button, textarea, input')) return;
+      navigateFromSurface(event.clientX + viewerSurface.getBoundingClientRect().left);
+    });
+  });
+}
+
+async function finalizeEpubLayout() {
+  resizeEpubViewer();
+  await waitForLayout();
+  resizeEpubViewer();
+}
+
 if (window.pdfjsLib) {
   window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 }
 
-function setReaderStatus(page, total) {
-  readerPosition.textContent = total
+function loadLibrary() {
+  try {
+    const raw = localStorage.getItem(LIBRARY_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return [];
+}
+
+function loadNotesStore() {
+  try {
+    const raw = localStorage.getItem(NOTES_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return {};
+}
+
+function saveNotesStore(store) {
+  localStorage.setItem(NOTES_KEY, JSON.stringify(store));
+}
+
+function loadMappings() {
+  try {
+    const raw = localStorage.getItem(MAPPINGS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return {};
+}
+
+function saveMappings(mappings) {
+  localStorage.setItem(MAPPINGS_KEY, JSON.stringify(mappings));
+}
+
+function loadBookmarks() {
+  try {
+    const raw = localStorage.getItem(BOOKMARKS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return {};
+}
+
+function saveBookmarks(bookmarks) {
+  localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks));
+}
+
+function getBookmark(bookId) {
+  return bookId ? loadBookmarks()[bookId] || null : null;
+}
+
+function updateBookmarkUI() {
+  const active = Boolean(getBookmark(currentBookId));
+  bookmarkButton.classList.toggle('is-bookmarked', active);
+  bookmarkButton.textContent = active ? '♥' : '♡';
+  bookmarkButton.setAttribute('aria-label', active ? 'Remove bookmark' : 'Bookmark this page');
+  bookFrame.classList.toggle('bookmarked', active);
+}
+
+function saveCurrentBookmark() {
+  if (!currentBookId || !currentPage || currentProgress == null) return false;
+  const bookmarks = loadBookmarks();
+  bookmarks[currentBookId] = {
+    page: currentPage,
+    totalPages: currentTotalPages,
+    percentage: currentProgress,
+    cfi: readerType === 'epub' ? currentLocationCfi : null,
+    notes: getNotesForBook(currentBookId),
+    savedAt: Date.now()
+  };
+  saveBookmarks(bookmarks);
+  updateBookmarkUI();
+  return true;
+}
+
+function removeCurrentBookmark() {
+  const bookmarks = loadBookmarks();
+  delete bookmarks[currentBookId];
+  saveBookmarks(bookmarks);
+  updateBookmarkUI();
+}
+
+async function restoreBookmark() {
+  const bookmark = getBookmark(currentBookId);
+  if (!bookmark) return;
+  if (readerType === 'pdf' && pdfDocument && bookmark.page) {
+    pdfPageNumber = bookmark.page;
+    await renderPdfPage(readingScale);
+  } else if (readerType === 'epub' && epubRendition && bookmark.cfi) {
+    await epubRendition.display(bookmark.cfi);
+  }
+  updateBookmarkUI();
+  showReaderToast(`Resuming at ${Math.round((bookmark.percentage || 0) * 100)}%`);
+}
+
+function normalizeTitle(s) {
+  return (s || '')
+    .replace(/\.(epub|pdf)$/i, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function findBookById(id) {
+  if (!id) return null;
+  const library = loadLibrary();
+  for (const tier of library) {
+    for (const book of tier.books) {
+      if (book.id === id) return book;
+    }
+  }
+  return null;
+}
+
+function findBookIdByTitle(title) {
+  const needle = normalizeTitle(title);
+  if (!needle) return null;
+  const library = loadLibrary();
+  let partial = null;
+  for (const tier of library) {
+    for (const book of tier.books) {
+      const hay = normalizeTitle(book.title);
+      if (!hay) continue;
+      if (hay === needle) return book.id;
+      if (hay.includes(needle) || needle.includes(hay)) partial = book.id;
+    }
+  }
+  return partial;
+}
+
+function getNotesForBook(bookId) {
+  if (!bookId) return [];
+  const store = loadNotesStore();
+  return Array.isArray(store[bookId]) ? store[bookId] : [];
+}
+
+function getNoteForPage(bookId, page) {
+  return getNotesForBook(bookId).find(n => n.page === page);
+}
+
+function saveNoteForPage(bookId, page, text) {
+  const trimmed = (text || '').trim();
+  const store = loadNotesStore();
+  const list = Array.isArray(store[bookId]) ? [...store[bookId]] : [];
+  const idx = list.findIndex(n => n.page === page);
+  if (!trimmed) {
+    if (idx >= 0) list.splice(idx, 1);
+  } else if (idx >= 0) {
+    list[idx] = { page, text: trimmed };
+  } else {
+    list.push({ page, text: trimmed });
+  }
+  list.sort((a, b) => a.page - b.page);
+  store[bookId] = list;
+  saveNotesStore(store);
+}
+
+function deleteNoteForPage(bookId, page) {
+  const store = loadNotesStore();
+  const list = Array.isArray(store[bookId]) ? store[bookId].filter(n => n.page !== page) : [];
+  store[bookId] = list;
+  saveNotesStore(store);
+}
+
+function showReaderToast(msg) {
+  readerToast.textContent = msg;
+  readerToast.classList.add('show');
+  clearTimeout(window._readerToastTimer);
+  window._readerToastTimer = setTimeout(() => readerToast.classList.remove('show'), 1800);
+}
+
+function updateBookIdUI() {
+  if (!currentFileName) {
+    bookIdBlock.hidden = true;
+    return;
+  }
+  bookIdBlock.hidden = false;
+  if (currentBookId) {
+    bookIdLinked.hidden = false;
+    bookIdUnlinked.hidden = true;
+    linkedBookId.textContent = currentBookId;
+    const shelfBook = findBookById(currentBookId);
+    currentBookList.querySelector('.library-meta').textContent = shelfBook
+      ? `${shelfBook.author} · ID ${currentBookId}`
+      : `Linked · ID ${currentBookId}`;
+  } else {
+    bookIdLinked.hidden = true;
+    bookIdUnlinked.hidden = false;
+    bookIdInput.value = '';
+  }
+}
+
+function setCurrentBookId(id, persist = true) {
+  if (id && !findBookById(id)) {
+    showReaderToast('No shelf book with that ID');
+    return false;
+  }
+  currentBookId = id || null;
+  if (persist && currentFileName) {
+    const mappings = loadMappings();
+    if (currentBookId) mappings[currentFileName] = currentBookId;
+    else delete mappings[currentFileName];
+    saveMappings(mappings);
+  }
+  updateBookIdUI();
+  refreshNotesUI();
+  updateBookmarkUI();
+  return true;
+}
+
+function resolveBookId(fileName, titleFromFile) {
+  const mappings = loadMappings();
+  if (mappings[fileName] && findBookById(mappings[fileName])) {
+    return mappings[fileName];
+  }
+  const byTitle = findBookIdByTitle(titleFromFile);
+  if (byTitle) {
+    mappings[fileName] = byTitle;
+    saveMappings(mappings);
+    return byTitle;
+  }
+  return null;
+}
+
+function refreshNotesUI() {
+  const count = currentBookId ? getNotesForBook(currentBookId).length : 0;
+  notesCount.textContent = `${count} NOTE${count === 1 ? '' : 'S'}`;
+  notesPanel.classList.toggle('no-book', !currentBookId || !readerType);
+
+  if (!currentBookId || !currentPage) {
+    notesPageLabel.textContent = 'Page —';
+    pageNoteInput.value = '';
+    pageNoteInput.disabled = true;
+    return;
+  }
+
+  pageNoteInput.disabled = false;
+  if (readerType === 'epub') {
+    notesPageLabel.textContent = `Ch. page ${currentPage}${currentTotalPages ? ` of ${currentTotalPages}` : ''}`;
+  } else {
+    notesPageLabel.textContent = `Page ${currentPage}${currentTotalPages ? ` of ${currentTotalPages}` : ''}`;
+  }
+  const existing = getNoteForPage(currentBookId, currentPage);
+  pageNoteInput.value = existing ? existing.text : '';
+}
+
+function setPdfReaderStatus(page, total) {
+  readerPositionPdf.hidden = false;
+  readerPositionMain.hidden = true;
+  readerPositionSub.hidden = true;
+  currentPage = page || 0;
+  currentTotalPages = total || 0;
+  currentProgress = total ? page / total : 0;
+  readerPositionPdf.textContent = total
     ? `PAGE ${page} OF ${total}`
     : 'READING';
   progressBar.style.width = total ? `${(page / total) * 100}%` : '0%';
+  refreshNotesUI();
+}
+
+function findNavItem(nav, href) {
+  if (!nav?.toc || !href) return null;
+  const target = href.split('#')[0];
+  function walk(items) {
+    for (const item of items) {
+      const itemHref = (item.href || '').split('#')[0];
+      if (itemHref && itemHref === target) return item;
+      if (item.subitems?.length) {
+        const found = walk(item.subitems);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+  return walk(nav.toc);
+}
+
+function titleFromSpineHref(href) {
+  const file = (href || '').split('/').pop().replace(/\.(xhtml|html?)$/i, '');
+  const title = file.replace(/[-_]+/g, ' ').trim();
+  return title || 'Chapter';
+}
+
+function getEpubChapterName(location) {
+  if (!epubBook || !location?.start) return 'Chapter';
+  const item = epubBook.spine.get(location.start.index);
+  if (!item) return 'Chapter';
+  if (item.label && item.label.trim()) return item.label.trim();
+  const navItem = findNavItem(epubNavigation, item.href);
+  if (navItem?.label?.trim()) return navItem.label.trim();
+  return titleFromSpineHref(item.href);
+}
+
+function getEpubBookPage(location) {
+  if (!epubBook?.locations || epubBookTotalLocations <= 0 || !location?.start?.cfi) return null;
+  const idx = epubBook.locations.locationFromCfi(location.start.cfi);
+  return idx >= 0 ? idx + 1 : null;
+}
+
+function setEpubReaderStatus(location) {
+  if (!location?.start?.displayed) return;
+  readerPositionPdf.hidden = true;
+  readerPositionMain.hidden = false;
+  readerPositionSub.hidden = false;
+
+  const displayed = location.start.displayed;
+  const chapterPage = displayed.page || 0;
+  const chapterTotal = displayed.total || 0;
+  currentPage = chapterPage;
+  currentTotalPages = chapterTotal;
+  currentLocationCfi = location.start.cfi || null;
+
+  const chapterName = getEpubChapterName(location);
+  const pagesLeft = chapterTotal > chapterPage ? chapterTotal - chapterPage : 0;
+
+  readerPositionMain.textContent = chapterName;
+  let sub = chapterTotal
+    ? `Page ${chapterPage} of ${chapterTotal} in chapter · ${pagesLeft} left`
+    : 'Reading';
+
+  const bookPage = getEpubBookPage(location);
+  const locationPercentage = Number(location.start.percentage);
+  const bookProgress = bookPage && epubBookTotalLocations > 1
+    ? (bookPage - 1) / (epubBookTotalLocations - 1)
+    : epubBookTotalLocations > 0 && Number.isFinite(locationPercentage) && locationPercentage < 1
+      ? locationPercentage
+      : 0;
+  if (bookPage && epubBookTotalLocations > 0) {
+    sub += ` · Book page ${bookPage} of ${epubBookTotalLocations}`;
+  } else if (Number.isFinite(locationPercentage) && locationPercentage < 1) {
+    sub += ` · Book ${Math.round(bookProgress * 100)}%`;
+  }
+  readerPositionSub.textContent = sub;
+
+  currentProgress = Math.max(0, Math.min(1, bookProgress));
+  progressBar.style.width = `${currentProgress * 100}%`;
+  refreshNotesUI();
+}
+
+async function loadEpubNavigation(book) {
+  try {
+    epubNavigation = await book.loaded.navigation;
+  } catch (e) {
+    epubNavigation = null;
+  }
+}
+
+async function initEpubBookLocations(book) {
+  try {
+    if (book.locations?.length && book.locations.length() > 0) {
+      epubBookTotalLocations = book.locations.length();
+    } else {
+      await book.locations.generate(1400);
+      epubBookTotalLocations = book.locations.length();
+    }
+    if (epubRendition) {
+      const loc = epubRendition.currentLocation();
+      if (loc) setEpubReaderStatus(loc);
+    }
+  } catch (e) {
+    epubBookTotalLocations = 0;
+  }
 }
 
 function showError(message) {
@@ -518,9 +1616,61 @@ function showError(message) {
 
 function setBookTitle(name) {
   const title = name.replace(/\.(epub|pdf)$/i, '') || 'Untitled book';
+  currentDisplayTitle = title;
   bookTitle.textContent = title;
   currentBookList.innerHTML = `<div class="library-item active"><span class="mini-cover"></span><div><div class="library-title"></div><div class="library-meta">Open on this device</div></div></div>`;
   currentBookList.querySelector('.library-title').textContent = title;
+}
+
+async function goToPage(page) {
+  if (!page || !readerType) return;
+  if (readerType === 'pdf' && pdfDocument) {
+    pdfPageNumber = page;
+    if (pdfPageNumber % 2 === 0) pdfPageNumber--;
+    pdfPageNumber = Math.max(1, Math.min(pdfDocument.numPages, pdfPageNumber));
+    await renderPdfPage(readingScale);
+  } else if (readerType === 'epub' && epubRendition) {
+    await epubRendition.display(page);
+  }
+}
+
+function openAllNotesModal() {
+  if (!currentBookId) {
+    showReaderToast('Assign a book ID first');
+    return;
+  }
+  const notes = getNotesForBook(currentBookId);
+  allNotesTitle.textContent = `Notes · ID ${currentBookId}`;
+  allNotesList.innerHTML = '';
+
+  if (!notes.length) {
+    allNotesList.innerHTML = '<div class="notes-modal-empty">No sticky notes yet for this book.</div>';
+  } else {
+    notes.forEach(note => {
+      const item = document.createElement('div');
+      item.className = 'all-note-item';
+      item.innerHTML = `
+        <div class="all-note-page">Page ${note.page}</div>
+        <div class="all-note-text"></div>
+        <button type="button" class="all-note-del">Delete</button>
+      `;
+      item.querySelector('.all-note-text').textContent = note.text;
+      item.addEventListener('click', e => {
+        if (e.target.closest('.all-note-del')) return;
+        notesModal.hidden = true;
+        goToPage(note.page);
+      });
+      item.querySelector('.all-note-del').addEventListener('click', e => {
+        e.stopPropagation();
+        deleteNoteForPage(currentBookId, note.page);
+        refreshNotesUI();
+        openAllNotesModal();
+        showReaderToast('Note deleted');
+      });
+      allNotesList.appendChild(item);
+    });
+  }
+  notesModal.hidden = false;
 }
 
 async function renderPdfPage(userScale = 1.0) {
@@ -528,14 +1678,13 @@ async function renderPdfPage(userScale = 1.0) {
   const nextPage = pdfPageNumber < pdfDocument.numPages
     ? await pdfDocument.getPage(pdfPageNumber + 1)
     : null;
-  const viewerEl = document.getElementById('viewerPage');
-  const style = window.getComputedStyle(viewerEl);
-  const paddingX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
-  const paddingY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-  const maxHeight = viewerEl.clientHeight - paddingY;
+  const { width: surfaceW, height: surfaceH } = getViewerDimensions();
+  const gap = 0;
+  const maxHeight = surfaceH;
+  const maxPageWidth = Math.max((surfaceW - gap) / 2, 1);
   const baseViewport = page.getViewport({ scale: 1 });
-  const fitScale = Math.min((viewerEl.clientWidth - paddingX - 28) / 2 / baseViewport.width, maxHeight / baseViewport.height);
-  const scale = Math.max(fitScale, 0.2) * userScale;
+  const fitScale = Math.min(maxPageWidth / baseViewport.width, maxHeight / baseViewport.height);
+  const scale = Math.max(fitScale * userScale, 0.2);
   const outputScale = window.devicePixelRatio || 1;
   const renderCanvas = async (pdfPage, canvas) => {
     if (!pdfPage) {
@@ -554,7 +1703,7 @@ async function renderPdfPage(userScale = 1.0) {
   };
   await renderCanvas(page, pdfCanvas);
   await renderCanvas(nextPage, pdfCanvasNext);
-  setReaderStatus(pdfPageNumber, pdfDocument.numPages);
+  setPdfReaderStatus(pdfPageNumber, pdfDocument.numPages);
 }
 
 async function openBook(file) {
@@ -568,44 +1717,62 @@ async function openBook(file) {
   readerEmpty.hidden = true;
   epubViewer.hidden = extension !== 'epub';
   pdfViewer.hidden = extension !== 'pdf';
+  currentFileName = file.name;
   setBookTitle(file.name);
+  currentBookId = resolveBookId(file.name, file.name);
+  currentProgress = 0;
+  currentLocationCfi = null;
+  updateBookIdUI();
+  refreshNotesUI();
+  updateBookmarkUI();
+  if (currentBookId) showReaderToast(`Linked to ID ${currentBookId}`);
+  else showReaderToast('Assign shelf book ID for notes');
 
   try {
     const buffer = await file.arrayBuffer();
     if (extension === 'pdf') {
       readerType = 'pdf';
+      destroyEpub();
       pdfDocument = await window.pdfjsLib.getDocument({ data: buffer }).promise;
       pdfPageNumber = 1;
       await renderPdfPage(readingScale);
+      await restoreBookmark();
       return;
     }
 
     readerType = 'epub';
+    pdfDocument = null;
+    destroyEpub();
     if (!window.ePub) throw new Error('The EPUB reader library did not load.');
+
+    await waitForLayout();
+    const { width: viewerWidth, height: viewerHeight } = getViewerDimensions();
     const book = window.ePub(buffer);
-    const viewerWidth = document.getElementById('viewerPage').clientWidth - 32;
-    const viewerHeight = document.getElementById('viewerPage').clientHeight - 32;
-    epubViewer.style.width = `${viewerWidth}px`;
-    epubViewer.style.height = `${viewerHeight}px`;
+    epubBook = book;
+    loadEpubNavigation(book);
     epubRendition = book.renderTo(epubViewer, {
       width: viewerWidth,
       height: viewerHeight,
       flow: 'paginated',
       manager: 'default',
-      spread: 'always'
+      spread: 'always',
+      minSpreadWidth: 640
     });
-    epubRendition.themes.default({
-      body: {
-        'font-size': '125% !important',
-        '-webkit-font-smoothing': 'antialiased',
-        'text-rendering': 'optimizeLegibility'
+    registerEpubThemes();
+    applyReaderTheme();
+    epubRendition.on('relocated', location => setEpubReaderStatus(location));
+    epubRendition.on('rendered', (_section, view) => {
+      if (view && view.document) {
+        applyEpubThemeToDocument(view.document, getActiveEpubThemeName());
       }
-    });
-    epubRendition.on('relocated', location => {
-      const displayed = location.start.displayed;
-      setReaderStatus(displayed.page, displayed.total);
+      bindEpubSurfaceClicks();
+      resizeEpubViewer();
     });
     await epubRendition.display();
+    await initEpubBookLocations(book);
+    await finalizeEpubLayout();
+    applyReaderTheme();
+    await restoreBookmark();
   } catch (error) {
     showError(`Unable to open this ${extension.toUpperCase()}: ${error.message}`);
   }
@@ -636,22 +1803,94 @@ nextButton.addEventListener('click', async () => {
     await epubRendition.next();
   }
 });
+document.addEventListener('keydown', event => {
+  if (event.target.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+  if (event.key === 'ArrowLeft') {
+    event.preventDefault();
+    previousButton.click();
+  } else if (event.key === 'ArrowRight') {
+    event.preventDefault();
+    nextButton.click();
+  }
+});
+viewerSurface.addEventListener('click', handleReaderSurfaceClick);
+bookmarkButton.addEventListener('click', () => {
+  if (!currentBookId) {
+    showReaderToast('Assign a book ID first');
+    sidebar.classList.add('open');
+    return;
+  }
+  if (getBookmark(currentBookId)) {
+    removeCurrentBookmark();
+    showReaderToast('Bookmark removed');
+  } else if (saveCurrentBookmark()) {
+    showReaderToast('Page bookmarked');
+  }
+});
 window.addEventListener('resize', () => {
   if (readerType === 'pdf' && pdfDocument) renderPdfPage(readingScale);
-  if (readerType === 'epub' && epubRendition) {
-    const viewerWidth = document.getElementById('viewerPage').clientWidth - 32;
-    const viewerHeight = document.getElementById('viewerPage').clientHeight - 32;
-    epubViewer.style.width = `${viewerWidth}px`;
-    epubViewer.style.height = `${viewerHeight}px`;
-    epubRendition.resize(viewerWidth, viewerHeight);
-  }
+  if (readerType === 'epub' && epubRendition) resizeEpubViewer();
 });
 themeToggle.addEventListener('click', () => {
   document.body.classList.toggle('dark-mode');
   const dark = document.body.classList.contains('dark-mode');
   themeToggle.textContent = dark ? '☀' : '☾';
   themeToggle.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Toggle dark mode');
+  applyReaderTheme();
 });
+
+saveNoteBtn.addEventListener('click', () => {
+  if (!currentBookId) {
+    showReaderToast('Assign a book ID first');
+    sidebar.classList.add('open');
+    return;
+  }
+  if (!currentPage) return;
+  saveNoteForPage(currentBookId, currentPage, pageNoteInput.value);
+  const bookmark = getBookmark(currentBookId);
+  if (bookmark) {
+    bookmark.notes = getNotesForBook(currentBookId);
+    const bookmarks = loadBookmarks();
+    bookmarks[currentBookId] = bookmark;
+    saveBookmarks(bookmarks);
+  }
+  refreshNotesUI();
+  showReaderToast('Note saved');
+});
+
+pageNoteInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    saveNoteBtn.click();
+  }
+});
+
+allNotesBtn.addEventListener('click', openAllNotesModal);
+closeNotesModal.addEventListener('click', () => { notesModal.hidden = true; });
+notesModalBackdrop.addEventListener('click', () => { notesModal.hidden = true; });
+
+assignBookIdBtn.addEventListener('click', () => {
+  const id = bookIdInput.value.trim();
+  if (!/^\d{6}$/.test(id)) {
+    showReaderToast('Enter a 6-digit ID');
+    return;
+  }
+  if (setCurrentBookId(id)) showReaderToast('Book ID linked');
+});
+
+changeBookIdBtn.addEventListener('click', () => {
+  bookIdLinked.hidden = true;
+  bookIdUnlinked.hidden = false;
+  bookIdInput.value = currentBookId || '';
+  bookIdInput.focus();
+});
+
+linkedBookId.addEventListener('click', () => {
+  if (!currentBookId) return;
+  navigator.clipboard.writeText(currentBookId).then(() => showReaderToast('ID copied'));
+});
+
+refreshNotesUI();
 </script>
 </body>
 </html>
