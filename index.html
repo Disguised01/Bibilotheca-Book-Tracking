@@ -625,6 +625,7 @@ header h1 {
 <script>
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
 const KEY = 'bibliotheca-library-v4';
+const LEGACY_KEY = 'amit-library-v4';
 const BOOKMARKS_KEY = 'bibliotheca-bookmarks';
 
 // ─── THEMES ───────────────────────────────────────────────────────────────────
@@ -683,8 +684,12 @@ function migrateData(arr) {
 
 function load() {
   try {
-    const r = localStorage.getItem(KEY);
-    if (r) return migrateData(JSON.parse(r));
+    const r = localStorage.getItem(KEY) || localStorage.getItem(LEGACY_KEY);
+    if (r) {
+      const migrated = migrateData(JSON.parse(r));
+      if (!localStorage.getItem(KEY)) localStorage.setItem(KEY, JSON.stringify(migrated));
+      return migrated;
+    }
   } catch(e) {}
   return []; // starts empty — populate via Import
 }
@@ -698,8 +703,12 @@ let data = load();
 
 // ─── ACTIVE RACK (single almirah shown at a time) ──────────────────────────────
 const ACTIVE_RACK_KEY = 'bibliotheca-active-rack';
+const LEGACY_ACTIVE_RACK_KEY = 'amit-library-active-rack';
 function loadActiveRack() {
-  try { return parseInt(localStorage.getItem(ACTIVE_RACK_KEY) || '0', 10) || 0; } catch(e) { return 0; }
+  try {
+    const saved = localStorage.getItem(ACTIVE_RACK_KEY) ?? localStorage.getItem(LEGACY_ACTIVE_RACK_KEY);
+    return parseInt(saved || '0', 10) || 0;
+  } catch(e) { return 0; }
 }
 function saveActiveRack(i) {
   try { localStorage.setItem(ACTIVE_RACK_KEY, String(i)); } catch(e) {}

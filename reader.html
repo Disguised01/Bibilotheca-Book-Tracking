@@ -984,6 +984,7 @@ body.dark-mode { --paper: #211d19; --paper-deep: #332b24; --line: rgba(244, 225,
 </div>
 <script>
 const LIBRARY_KEY = 'bibliotheca-library-v4';
+const LEGACY_LIBRARY_KEY = 'amit-library-v4';
 const NOTES_KEY = 'bibliotheca-sticky-notes';
 const MAPPINGS_KEY = 'bibliotheca-reader-mappings';
 const BOOKMARKS_KEY = 'bibliotheca-bookmarks';
@@ -1247,8 +1248,12 @@ if (window.pdfjsLib) {
 
 function loadLibrary() {
   try {
-    const raw = localStorage.getItem(LIBRARY_KEY);
-    if (raw) return JSON.parse(raw);
+    const raw = localStorage.getItem(LIBRARY_KEY) || localStorage.getItem(LEGACY_LIBRARY_KEY);
+    if (raw) {
+      const library = JSON.parse(raw);
+      if (!localStorage.getItem(LIBRARY_KEY)) localStorage.setItem(LIBRARY_KEY, JSON.stringify(library));
+      return library;
+    }
   } catch (e) {}
   return [];
 }
