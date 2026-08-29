@@ -185,12 +185,12 @@
       <span id="bsyncStatus" style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(212,175,55,0.45);"></span>
       <span id="bsyncSignedOut">
         <input id="bsyncEmail" type="email" placeholder="you@example.com"
-          style="font-family:'Crimson Pro',serif;font-size:12px;padding:5px 8px;background:rgba(0,0,0,0.4);border:1px solid rgba(212,175,55,0.25);border-radius:3px;color:#e0d5c5;width:170px;">
-        <button id="bsyncSendLink" class="hbtn" style="padding:6px 14px;font-size:10px;">Sign in</button>
+          style="font-family:'Crimson Pro',serif;font-size:12px;padding:7px 9px;background:rgba(0,0,0,0.4);border:1px solid rgba(212,175,55,0.25);border-radius:3px;color:#e0d5c5;">
+        <button id="bsyncSendLink" class="hbtn" style="padding:7px 14px;font-size:10px;">Sign in</button>
       </span>
       <span id="bsyncSignedIn" style="display:none;">
-        <span id="bsyncEmailLabel" style="font-family:'Cinzel',serif;font-size:11px;color:rgba(212,175,55,0.7);margin-right:8px;"></span>
-        <button id="bsyncSignOut" class="hbtn" style="padding:6px 14px;font-size:10px;">Sign out</button>
+        <span id="bsyncEmailLabel" style="font-family:'Cinzel',serif;font-size:11px;color:rgba(212,175,55,0.7);"></span>
+        <button id="bsyncSignOut" class="hbtn" style="padding:7px 14px;font-size:10px;">Sign out</button>
       </span>
     `;
 
@@ -247,6 +247,7 @@
     signOut,
     mountAuthWidget,
     onStatus,
+    getSession: () => session,
   };
 
   // Auto-init once DOM is ready.

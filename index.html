@@ -79,6 +79,60 @@ header h1 {
   opacity: 0; cursor: pointer; font-size: 0;
 }
 
+/* ── Account corner ── */
+.account-corner {
+  position: fixed; top: 20px; right: 20px; z-index: 4000;
+}
+.account-avatar {
+  position: relative;
+  width: 42px; height: 42px; border-radius: 50%;
+  background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.35);
+  color: var(--gold); font-family: 'Cinzel', serif; font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .2s;
+}
+.account-avatar:hover { background: rgba(212,175,55,0.18); border-color: var(--gold); }
+.account-avatar.signed-in { background: rgba(212,175,55,0.22); }
+.account-dot {
+  position: absolute; bottom: 1px; right: 1px; width: 10px; height: 10px;
+  border-radius: 50%; background: #6b6b6b; border: 2px solid var(--bg);
+}
+.account-dot.on { background: #6fbf73; }
+.account-tray {
+  display: none; position: absolute; top: 52px; right: 0;
+  width: 280px; background: rgba(16,13,10,0.98);
+  border: 1px solid rgba(212,175,55,0.28); border-radius: 10px;
+  padding: 18px; box-shadow: 0 30px 70px rgba(0,0,0,0.8);
+}
+.account-tray.open { display: block; }
+.tray-section { margin-bottom: 18px; }
+.tray-section:last-child { margin-bottom: 0; }
+.tray-label {
+  font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: .12em;
+  text-transform: uppercase; color: rgba(212,175,55,0.5);
+  margin-bottom: 10px; padding-bottom: 6px;
+  border-bottom: 1px solid rgba(212,175,55,0.12);
+}
+.tray-feature-btn {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; text-align: left; font-family: 'Crimson Pro', serif;
+  font-size: 13px; background: rgba(255,255,255,0.02);
+  color: rgba(209,199,183,0.4); border: 1px solid rgba(212,175,55,0.1);
+  padding: 9px 12px; border-radius: 5px; margin-bottom: 7px;
+  cursor: not-allowed;
+}
+.tray-feature-btn:last-child { margin-bottom: 0; }
+.tray-feature-btn .soon {
+  font-family: 'Cinzel', serif; font-size: 8px; letter-spacing: .08em;
+  text-transform: uppercase; color: rgba(212,175,55,0.35);
+  border: 1px solid rgba(212,175,55,0.2); border-radius: 3px; padding: 2px 6px;
+}
+#syncWidget input#bsyncEmail { width: 100%; margin-bottom: 8px; box-sizing: border-box; }
+#syncWidget #bsyncSendLink, #syncWidget #bsyncSignOut { width: 100%; margin-top: 2px; }
+#syncWidget #bsyncStatus { display: block; margin-bottom: 8px; }
+#syncWidget #bsyncSignedIn { display: flex; flex-direction: column; gap: 6px; }
+#syncWidget #bsyncEmailLabel { word-break: break-all; }
+
 .rack-nav {
   display: flex; align-items: center; justify-content: center; gap: 20px;
   margin-bottom: 14px;
@@ -603,8 +657,28 @@ header h1 {
       <input type="file" accept=".json" onchange="importBackup(event)">
     </span>
   </div>
-  <div id="syncWidget" style="display:flex;align-items:center;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;"></div>
 </header>
+
+<!-- Account corner -->
+<div class="account-corner" id="accountCorner">
+  <button class="account-avatar" id="accountAvatarBtn" aria-label="Account">
+    <span id="accountAvatarLetter">＋</span>
+    <span class="account-dot" id="accountDot"></span>
+  </button>
+  <div class="account-tray" id="accountTray">
+    <div class="tray-section">
+      <div class="tray-label">Account &amp; Sync</div>
+      <div id="syncWidget"></div>
+    </div>
+    <div class="tray-section">
+      <div class="tray-label">Planned Features</div>
+      <button class="tray-feature-btn" disabled>Google Drive books <span class="soon">Soon</span></button>
+      <button class="tray-feature-btn" disabled>Dropbox books <span class="soon">Soon</span></button>
+      <button class="tray-feature-btn" disabled>Project Gutenberg catalog <span class="soon">Soon</span></button>
+      <button class="tray-feature-btn" disabled>Internet Archive catalog <span class="soon">Soon</span></button>
+    </div>
+  </div>
+</div>
 
 <!-- Shelves -->
 <main id="shelves"></main>
@@ -1399,7 +1473,32 @@ document.getElementById('exportBtn').addEventListener('click', exportBackup);
 updateStorageInfo();
 renderShelves();
 renderManage();
-if (window.BiblioSync) BiblioSync.mountAuthWidget(document.getElementById('syncWidget'));
+if (window.BiblioSync) {
+  BiblioSync.mountAuthWidget(document.getElementById('syncWidget'));
+
+  const avatarBtn = document.getElementById('accountAvatarBtn');
+  const avatarLetter = document.getElementById('accountAvatarLetter');
+  const avatarDot = document.getElementById('accountDot');
+  const tray = document.getElementById('accountTray');
+  const corner = document.getElementById('accountCorner');
+
+  avatarBtn.addEventListener('click', () => tray.classList.toggle('open'));
+  document.addEventListener('click', e => {
+    if (!corner.contains(e.target)) tray.classList.remove('open');
+  });
+
+  BiblioSync.onStatus(status => {
+    const session = BiblioSync.getSession && BiblioSync.getSession();
+    const signedIn = status === 'signed-in' || status === 'syncing' || status === 'synced';
+    avatarBtn.classList.toggle('signed-in', signedIn);
+    avatarDot.classList.toggle('on', signedIn);
+    if (signedIn && session && session.user && session.user.email) {
+      avatarLetter.textContent = session.user.email[0].toUpperCase();
+    } else {
+      avatarLetter.textContent = '＋';
+    }
+  });
+}
 </script>
 </body>
 </html>
