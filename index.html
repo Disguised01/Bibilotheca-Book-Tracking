@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bibliotheca</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="supabase-sync.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -601,6 +603,7 @@ header h1 {
       <input type="file" accept=".json" onchange="importBackup(event)">
     </span>
   </div>
+  <div id="syncWidget" style="display:flex;align-items:center;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;"></div>
 </header>
 
 <!-- Shelves -->
@@ -1396,6 +1399,7 @@ document.getElementById('exportBtn').addEventListener('click', exportBackup);
 updateStorageInfo();
 renderShelves();
 renderManage();
+if (window.BiblioSync) BiblioSync.mountAuthWidget(document.getElementById('syncWidget'));
 </script>
 </body>
 </html>
