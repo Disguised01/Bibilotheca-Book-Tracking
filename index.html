@@ -793,6 +793,23 @@ header h1 {
   </div>
 </div>
 
+<!-- Link-to-catalog modal -->
+<div class="link-modal-backdrop" id="linkModalBackdrop">
+  <div class="link-modal">
+    <h3>Link to an online copy</h3>
+    <div class="link-sub" id="linkModalSub"></div>
+    <div id="linkCurrentBox"></div>
+    <div class="link-search-row">
+      <input type="text" id="linkSearchInput" placeholder="Search title or author…">
+      <button class="hbtn" id="linkSearchBtn" style="padding:9px 16px;font-size:11px;">Search</button>
+    </div>
+    <div id="linkResults">
+      <div class="link-empty">Search Project Gutenberg and Internet Archive above, then pick the matching edition.</div>
+    </div>
+    <button class="link-modal-close" id="linkModalClose">Close</button>
+  </div>
+</div>
+
 <script>
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
 const KEY = 'bibliotheca-library-v4';
@@ -1707,21 +1724,6 @@ if (window.BiblioSync) {
   searchBtn.addEventListener('click', runSearch);
   input.addEventListener('keydown', e => { if (e.key === 'Enter') runSearch(); });
 })();
-</script><!-- Link-to-catalog modal -->
-<div class="link-modal-backdrop" id="linkModalBackdrop">
-  <div class="link-modal">
-    <h3>Link to an online copy</h3>
-    <div class="link-sub" id="linkModalSub"></div>
-    <div id="linkCurrentBox"></div>
-    <div class="link-search-row">
-      <input type="text" id="linkSearchInput" placeholder="Search title or author…">
-      <button class="hbtn" id="linkSearchBtn" style="padding:9px 16px;font-size:11px;">Search</button>
-    </div>
-    <div id="linkResults">
-      <div class="link-empty">Search Project Gutenberg and Internet Archive above, then pick the matching edition.</div>
-    </div>
-    <button class="link-modal-close" id="linkModalClose">Close</button>
-  </div>
-</div>
+</script>
 </body>
 </html>
