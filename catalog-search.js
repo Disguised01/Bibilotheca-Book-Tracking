@@ -15,11 +15,55 @@
  */
 
 (function (global) {
+  // Small helper: fetch that gives up after `ms` instead of hanging
+  // forever on a stalled/blocked request (e.g. a huge raw-scan item with
+  // no CDN, or a request that silently never resolves).
+  async function fetchWithTimeout(url, ms, options) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), ms);
+    try {
+      return await fetch(url, { ...(options || {}), signal: controller.signal });
+    } catch (e) {
+      if (e.name === 'AbortError') throw new Error(`Request timed out after ${Math.round(ms / 1000)}s — the server may be slow or unreachable.`);
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  // Downloads a URL as a Blob while reporting progress via onProgress({
+  // loaded, total }) — total is null if the server didn't send a size.
+  // No overall timeout here (large legitimate files can take minutes),
+  // but progress ticking proves it's actually moving rather than stuck.
+  async function fetchBlobWithProgress(url, onProgress) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`File request failed (${res.status})`);
+    const total = Number(res.headers.get('Content-Length')) || null;
+    if (!res.body || !res.body.getReader) {
+      // Streaming not supported (older browser) — fall back to a plain blob.
+      const blob = await res.blob();
+      if (onProgress) onProgress({ loaded: blob.size, total: blob.size });
+      return blob;
+    }
+    const reader = res.body.getReader();
+    const chunks = [];
+    let loaded = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      loaded += value.length;
+      if (onProgress) onProgress({ loaded, total });
+    }
+    return new Blob(chunks);
+  }
+
   // Gutendex is a community-run read API over Project Gutenberg's catalog
   // — no key needed, returns clean JSON (title/author/id), which is far
   // easier to work with than Gutenberg's own bulk RDF/catalog files.
   const GUTENDEX_BASE = 'https://gutendex.com/books';
   const GUTENBERG_PROXY = 'https://ewwhbstfgyzmjrmiufaq.supabase.co/functions/v1/gutenberg-proxy';
+  const METADATA_TIMEOUT_MS = 15000;
 
   async function searchGutenberg(query) {
     const url = `${GUTENDEX_BASE}?search=${encodeURIComponent(query)}`;
@@ -86,7 +130,7 @@
   // fingerprint, not a bug in the id pairing itself. See the caller in
   // reader.html for how that distinction is surfaced to the user.
   async function getGutenbergFormats(externalId) {
-    const res = await fetch(`${GUTENDEX_BASE}/${externalId}`);
+    const res = await fetchWithTimeout(`${GUTENDEX_BASE}/${externalId}`, METADATA_TIMEOUT_MS);
     if (!res.ok) throw new Error(`Could not look up Gutenberg book #${externalId} (${res.status})`);
     const data = await res.json();
     return data.formats || {};
@@ -94,25 +138,40 @@
 
   // Prefer EPUB (renders with epub.js already in the app); fall back to
   // plain text if that's all this particular book offers.
-  async function fetchGutenbergFile(externalId) {
-    const formats = await getGutenbergFormats(externalId);
+  function pickGutenbergFile(formats) {
     const epubUrl = Object.entries(formats).find(([mime]) => mime === 'application/epub+zip')?.[1];
     const textUrl = Object.entries(formats).find(([mime]) => mime.startsWith('text/plain'))?.[1];
-    const url = epubUrl || textUrl;
+    return { epubUrl, textUrl, url: epubUrl || textUrl };
+  }
+
+  /** Lightweight check for the link-search UI: does this Gutenberg book have a readable format? */
+  async function checkGutenbergAvailability(externalId) {
+    try {
+      const formats = await getGutenbergFormats(externalId);
+      const { epubUrl, url } = pickGutenbergFile(formats);
+      if (!url) return { available: false };
+      return { available: true, format: epubUrl ? 'epub' : 'text' };
+    } catch (e) {
+      return { available: false, unknown: true };
+    }
+  }
+
+  async function fetchGutenbergFile(externalId, onProgress) {
+    const formats = await getGutenbergFormats(externalId);
+    const { epubUrl, textUrl, url } = pickGutenbergFile(formats);
     if (!url) throw new Error('This Gutenberg book has no EPUB or plain-text format available.');
 
-    let res;
+    let blob;
     try {
       const proxyUrl = `${GUTENBERG_PROXY}?url=${encodeURIComponent(url)}`;
-      res = await fetch(proxyUrl);
+      blob = await fetchBlobWithProgress(proxyUrl, onProgress);
     } catch (e) {
       // A network-level failure with no response at all is the CORS
       // fingerprint mentioned above — surface that plainly rather than
       // a bare "Failed to fetch".
+      if (e.message && e.message.includes('Request timed out')) throw e;
       throw new Error('Could not reach gutenberg.org directly from the browser (likely a CORS restriction on their file server, not a problem with your book\'s id link).');
     }
-    if (!res.ok) throw new Error(`Gutenberg file request failed (${res.status})`);
-    const blob = await res.blob();
     const filename = epubUrl ? `gutenberg-${externalId}.epub` : `gutenberg-${externalId}.txt`;
     return { blob, filename, isEpub: !!epubUrl };
   }
@@ -124,7 +183,7 @@
   // proxy. If it still fails with no status code, that's the same CORS
   // fingerprint as the Gutenberg case, not a problem with the id pairing.
   async function getArchiveFiles(identifier) {
-    const res = await fetch(`https://archive.org/metadata/${encodeURIComponent(identifier)}`);
+    const res = await fetchWithTimeout(`https://archive.org/metadata/${encodeURIComponent(identifier)}`, METADATA_TIMEOUT_MS);
     if (!res.ok) throw new Error(`Could not look up Archive item "${identifier}" (${res.status})`);
     const data = await res.json();
     return data.files || [];
@@ -135,32 +194,47 @@
   // items on Archive only ship a PDF with no EPUB derivative). A plain
   // OCR ".txt" transcript is deliberately not offered as a fallback —
   // this reader can't open bare text files either way.
-  async function fetchArchiveFile(identifier) {
-    const files = await getArchiveFiles(identifier);
+  function pickArchiveFile(identifier, files) {
     const epubFile = files.find(f => (f.format || '').toLowerCase().includes('epub') || /\.epub$/i.test(f.name || ''));
     // Avoid picking up small excerpt/abbyy PDFs when a proper full PDF exists;
     // prefer a file literally named "<identifier>.pdf" if present, else any .pdf.
     const pdfFile = files.find(f => f.name === `${identifier}.pdf`) ||
       files.find(f => (f.format || '').toLowerCase().includes('pdf') || /\.pdf$/i.test(f.name || ''));
-    const chosen = epubFile || pdfFile;
+    return { epubFile, pdfFile, chosen: epubFile || pdfFile };
+  }
+
+  /** Lightweight check for the link-search UI: does this Archive item have a readable file? */
+  async function checkArchiveAvailability(identifier) {
+    try {
+      const files = await getArchiveFiles(identifier);
+      const { epubFile, chosen } = pickArchiveFile(identifier, files);
+      if (!chosen) return { available: false };
+      return { available: true, format: epubFile ? 'epub' : 'pdf' };
+    } catch (e) {
+      return { available: false, unknown: true };
+    }
+  }
+
+  async function fetchArchiveFile(identifier, onProgress) {
+    const files = await getArchiveFiles(identifier);
+    const { epubFile, chosen } = pickArchiveFile(identifier, files);
     if (!chosen) throw new Error('This Archive item has no EPUB or PDF file available.');
 
     const url = `https://archive.org/download/${encodeURIComponent(identifier)}/${encodeURIComponent(chosen.name)}`;
-    let res;
+    let blob;
     try {
-      res = await fetch(url);
+      blob = await fetchBlobWithProgress(url, onProgress);
     } catch (e) {
+      if (e.message && (e.message.includes('Request timed out') || e.message.includes('File request failed'))) throw e;
       throw new Error('Could not reach archive.org directly from the browser (likely a CORS restriction on this file, not a problem with your book\'s id link).');
     }
-    if (!res.ok) throw new Error(`Archive file request failed (${res.status})`);
-    const blob = await res.blob();
     const filename = epubFile ? `archive-${identifier}.epub` : `archive-${identifier}.pdf`;
     return { blob, filename, isEpub: !!epubFile };
   }
 
   global.CatalogSearch = {
     searchGutenberg, searchArchive, searchAll,
-    getGutenbergFormats, fetchGutenbergFile,
-    getArchiveFiles, fetchArchiveFile,
+    getGutenbergFormats, fetchGutenbergFile, checkGutenbergAvailability,
+    getArchiveFiles, fetchArchiveFile, checkArchiveAvailability,
   };
 })(window);

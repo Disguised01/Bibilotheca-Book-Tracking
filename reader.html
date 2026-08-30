@@ -1924,13 +1924,16 @@ async function openBook(file) {
       resizeEpubViewer();
     });
     await epubRendition.display();
-    await initEpubBookLocations(book);
     await finalizeEpubLayout();
     applyReaderTheme();
     await restoreBookmark();
     readerEmpty.hidden = true;
     readerEmpty.classList.remove('is-loading');
     epubViewer.hidden = false;
+    // Location generation is only needed for the progress/percentage
+    // display — it can be slow on long books, so run it after the page
+    // is already visible instead of blocking the reveal on it.
+    initEpubBookLocations(book);
   } catch (error) {
     readerEmpty.classList.remove('is-loading');
     showError(`Unable to open this ${extension.toUpperCase()}: ${error.message}`);
@@ -2102,6 +2105,23 @@ if (window.BiblioSync) {
     readerEmpty.appendChild(span);
   }
 
+  function formatBytes(n) {
+    if (n == null) return null;
+    if (n > 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+    if (n > 1024) return `${(n / 1024).toFixed(0)} KB`;
+    return `${n} B`;
+  }
+
+  function makeProgressUpdater(spanEl) {
+    return ({ loaded, total }) => {
+      if (!spanEl.isConnected) return;
+      const loadedStr = formatBytes(loaded);
+      spanEl.textContent = total
+        ? `Downloading… ${loadedStr} of ${formatBytes(total)}`
+        : `Downloading… ${loadedStr} so far (size unknown — this can take a while for scanned books).`;
+    };
+  }
+
   const source = window.BookSources && BookSources.getSource(requested);
 
   if (!source) {
@@ -2121,7 +2141,8 @@ if (window.BiblioSync) {
       setEmptyState('Could not fetch automatically', 'catalog-search.js did not load. Open the file manually from the Books panel instead.');
       return;
     }
-    CatalogSearch.fetchGutenbergFile(source.externalId).then(({ blob, filename }) => {
+    const progressSpan = readerEmpty.querySelector('span');
+    CatalogSearch.fetchGutenbergFile(source.externalId, progressSpan ? makeProgressUpdater(progressSpan) : null).then(({ blob, filename }) => {
       const file = new File([blob], filename, { type: blob.type });
       openBook(file);
       showReaderToast(`Fetched from Project Gutenberg (#${source.externalId})`);
@@ -2145,7 +2166,8 @@ if (window.BiblioSync) {
       setEmptyState('Could not fetch automatically', 'catalog-search.js did not load. Open the file manually from the Books panel instead.');
       return;
     }
-    CatalogSearch.fetchArchiveFile(source.externalId).then(({ blob, filename }) => {
+    const progressSpan = readerEmpty.querySelector('span');
+    CatalogSearch.fetchArchiveFile(source.externalId, progressSpan ? makeProgressUpdater(progressSpan) : null).then(({ blob, filename }) => {
       const file = new File([blob], filename, { type: blob.type });
       openBook(file);
       showReaderToast(`Fetched from Internet Archive (${source.externalId})`);
