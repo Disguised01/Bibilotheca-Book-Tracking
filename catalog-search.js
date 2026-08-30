@@ -73,5 +73,47 @@
     };
   }
 
-  global.CatalogSearch = { searchGutenberg, searchArchive, searchAll };
+  // ── Fetching the actual file (this is the part that tests whether id
+  // pairing genuinely works end-to-end, not just search) ─────────────────
+  //
+  // Gutendex's own API responses are CORS-friendly (that's what powers
+  // search above), but the actual book FILES are hosted on gutenberg.org's
+  // static file servers, which historically have NOT reliably sent
+  // Access-Control-Allow-Origin headers for direct browser fetches. This
+  // function is written to work if they do — but if it throws a generic
+  // "Failed to fetch" with no useful status code, that's the classic CORS
+  // fingerprint, not a bug in the id pairing itself. See the caller in
+  // reader.html for how that distinction is surfaced to the user.
+  async function getGutenbergFormats(externalId) {
+    const res = await fetch(`${GUTENDEX_BASE}/${externalId}`);
+    if (!res.ok) throw new Error(`Could not look up Gutenberg book #${externalId} (${res.status})`);
+    const data = await res.json();
+    return data.formats || {};
+  }
+
+  // Prefer EPUB (renders with epub.js already in the app); fall back to
+  // plain text if that's all this particular book offers.
+  async function fetchGutenbergFile(externalId) {
+    const formats = await getGutenbergFormats(externalId);
+    const epubUrl = Object.entries(formats).find(([mime]) => mime === 'application/epub+zip')?.[1];
+    const textUrl = Object.entries(formats).find(([mime]) => mime.startsWith('text/plain'))?.[1];
+    const url = epubUrl || textUrl;
+    if (!url) throw new Error('This Gutenberg book has no EPUB or plain-text format available.');
+
+    let res;
+    try {
+      res = await fetch(url);
+    } catch (e) {
+      // A network-level failure with no response at all is the CORS
+      // fingerprint mentioned above — surface that plainly rather than
+      // a bare "Failed to fetch".
+      throw new Error('Could not reach gutenberg.org directly from the browser (likely a CORS restriction on their file server, not a problem with your book\'s id link).');
+    }
+    if (!res.ok) throw new Error(`Gutenberg file request failed (${res.status})`);
+    const blob = await res.blob();
+    const filename = epubUrl ? `gutenberg-${externalId}.epub` : `gutenberg-${externalId}.txt`;
+    return { blob, filename, isEpub: !!epubUrl };
+  }
+
+  global.CatalogSearch = { searchGutenberg, searchArchive, searchAll, getGutenbergFormats, fetchGutenbergFile };
 })(window);
