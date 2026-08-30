@@ -891,6 +891,16 @@ button { color: inherit; }
 @keyframes reader-spin { to { transform: rotate(360deg); } }
 .reader-empty.is-loading strong { text-align: center; }
 .reader-empty.is-loading span { text-align: center; }
+.reader-empty.is-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f9f0df;
+}
 
 body.dark-mode { --paper: #211d19; --paper-deep: #332b24; --line: rgba(244, 225, 195, .16); --muted: #b6a999; }
 .dark-mode .topbar { background: rgba(18, 8, 5, .86); }
@@ -1732,8 +1742,6 @@ function showError(message) {
 
 function showLoadingState(strongText, spanText) {
   readerError.hidden = true;
-  epubViewer.hidden = true;
-  pdfViewer.hidden = true;
   readerEmpty.hidden = false;
   readerEmpty.classList.add('is-loading');
   readerEmpty.innerHTML = '';
@@ -1848,6 +1856,8 @@ async function openBook(file) {
   }
 
   showLoadingState(`Opening "${file.name}"…`, 'Parsing and rendering the book — this can take a moment for large files.');
+  epubViewer.hidden = extension !== 'epub';
+  pdfViewer.hidden = extension !== 'pdf';
   currentFileName = file.name;
   setBookTitle(file.name);
   // If the user arrived here via a "Read this book" link (reader.html?bookId=NNNNNN),
@@ -2125,11 +2135,29 @@ if (window.BiblioSync) {
     return;
   }
 
-  // Internet Archive auto-fetch isn't built yet — this is next in line.
-  setEmptyState(
-    `Linked to Internet Archive`,
-    `"${book.title}" is linked to Archive item "${source.externalId}", but automatic fetching from Archive isn't built yet — open the file manually from the Books panel for now.`
-  );
+  // Internet Archive auto-fetch
+  if (source.source === 'archive') {
+    showLoadingState(
+      `Fetching "${book.title}" from Internet Archive…`,
+      `Linked to Archive item "${source.externalId}" — larger items can take a little while to download.`
+    );
+    if (!window.CatalogSearch) {
+      setEmptyState('Could not fetch automatically', 'catalog-search.js did not load. Open the file manually from the Books panel instead.');
+      return;
+    }
+    CatalogSearch.fetchArchiveFile(source.externalId).then(({ blob, filename }) => {
+      const file = new File([blob], filename, { type: blob.type });
+      openBook(file);
+      showReaderToast(`Fetched from Internet Archive (${source.externalId})`);
+    }).catch(err => {
+      console.error('[Archive fetch]', err);
+      setEmptyState(
+        'Automatic fetch failed',
+        `${err.message} You can still download the file yourself from archive.org/details/${source.externalId} and open it from the Books panel — the id (${book.id}) is already linked, so it will attach correctly.`
+      );
+    });
+    return;
+  }
 })();
 </script>
 </body>

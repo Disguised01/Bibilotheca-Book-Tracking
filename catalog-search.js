@@ -117,5 +117,45 @@
     return { blob, filename, isEpub: !!epubUrl };
   }
 
-  global.CatalogSearch = { searchGutenberg, searchArchive, searchAll, getGutenbergFormats, fetchGutenbergFile };
+  // ── Internet Archive file fetch ──────────────────────────────────────
+  // Archive.org's metadata endpoint lists every file for an item; unlike
+  // Gutenberg's static file servers, archive.org download URLs generally
+  // do send CORS headers, so this can usually fetch directly without a
+  // proxy. If it still fails with no status code, that's the same CORS
+  // fingerprint as the Gutenberg case, not a problem with the id pairing.
+  async function getArchiveFiles(identifier) {
+    const res = await fetch(`https://archive.org/metadata/${encodeURIComponent(identifier)}`);
+    if (!res.ok) throw new Error(`Could not look up Archive item "${identifier}" (${res.status})`);
+    const data = await res.json();
+    return data.files || [];
+  }
+
+  // Prefer EPUB (renders with epub.js already in the app); fall back to
+  // the plain-text OCR transcript (commonly named "<id>_djvu.txt") if
+  // that's all this particular item offers.
+  async function fetchArchiveFile(identifier) {
+    const files = await getArchiveFiles(identifier);
+    const epubFile = files.find(f => (f.format || '').toLowerCase().includes('epub') || /\.epub$/i.test(f.name || ''));
+    const textFile = files.find(f => /_djvu\.txt$/i.test(f.name || '') || (f.format || '').toLowerCase().includes('djvutxt'));
+    const chosen = epubFile || textFile;
+    if (!chosen) throw new Error('This Archive item has no EPUB or plain-text file available.');
+
+    const url = `https://archive.org/download/${encodeURIComponent(identifier)}/${encodeURIComponent(chosen.name)}`;
+    let res;
+    try {
+      res = await fetch(url);
+    } catch (e) {
+      throw new Error('Could not reach archive.org directly from the browser (likely a CORS restriction on this file, not a problem with your book\'s id link).');
+    }
+    if (!res.ok) throw new Error(`Archive file request failed (${res.status})`);
+    const blob = await res.blob();
+    const filename = epubFile ? `archive-${identifier}.epub` : `archive-${identifier}.txt`;
+    return { blob, filename, isEpub: !!epubFile };
+  }
+
+  global.CatalogSearch = {
+    searchGutenberg, searchArchive, searchAll,
+    getGutenbergFormats, fetchGutenbergFile,
+    getArchiveFiles, fetchArchiveFile,
+  };
 })(window);
