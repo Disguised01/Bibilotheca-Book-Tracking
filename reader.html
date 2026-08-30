@@ -2127,28 +2127,21 @@ if (window.BiblioSync) {
 
   if (source.source === 'gutenberg') {
     setEmptyState(
-      `Fetching "${book.title}" from Project Gutenberg…`,
-      `Linked to Gutenberg #${source.externalId} — this tests whether the id pairing actually works end-to-end.`
+      `Opening "${book.title}" from Project Gutenberg…`,
+      `Linked to Gutenberg #${source.externalId}.`
     );
     if (!window.CatalogSearch) {
       setEmptyState('Could not fetch automatically', 'catalog-search.js did not load. Open the file manually from the Books panel instead.');
       return;
     }
-    CatalogSearch.fetchGutenbergFile(source.externalId).then(({ blob, filename }) => {
-      const file = new File([blob], filename, { type: blob.type });
-      openBook(file);
-      showReaderToast(`Fetched from Project Gutenberg (#${source.externalId})`);
-    }).catch(async err => {
-      console.error('[Gutenberg fetch]', err);
-      try {
-        await openGutenbergHtml(source.externalId, book);
-        showReaderToast(`Opened Gutenberg web edition (#${source.externalId})`);
-      } catch (fallbackError) {
-        setEmptyState(
-          'Automatic fetch failed',
-          `${fallbackError.message} Gutenberg #${source.externalId} is linked to book ID ${book.id}.`
-        );
-      }
+    openGutenbergHtml(source.externalId, book).then(() => {
+      showReaderToast(`Opened Gutenberg web edition (#${source.externalId})`);
+    }).catch(error => {
+      console.error('[Gutenberg fetch]', error);
+      setEmptyState(
+        'Automatic fetch failed',
+        `${error.message} Gutenberg #${source.externalId} is linked to book ID ${book.id}.`
+      );
     });
     return;
   }
