@@ -13,6 +13,7 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="supabase-sync.js"></script>
 <script src="book-sources.js"></script>
+<script src="catalog-search.js"></script>
 <style>
 :root {
   --ink: #272521;
@@ -2046,13 +2047,55 @@ if (window.BiblioSync) {
     return;
   }
   requestedBookId = requested;
-  readerEmpty.innerHTML = '';
-  const strong = document.createElement('strong');
-  strong.textContent = `Ready to open "${book.title}"`;
-  const span = document.createElement('span');
-  span.textContent = `By ${book.author} · ID ${book.id} — open its EPUB or PDF from the Books panel to begin.`;
-  readerEmpty.appendChild(strong);
-  readerEmpty.appendChild(span);
+
+  function setEmptyState(strongText, spanText) {
+    readerEmpty.innerHTML = '';
+    const strong = document.createElement('strong');
+    strong.textContent = strongText;
+    const span = document.createElement('span');
+    span.textContent = spanText;
+    readerEmpty.appendChild(strong);
+    readerEmpty.appendChild(span);
+  }
+
+  const source = window.BookSources && BookSources.getSource(requested);
+
+  if (!source) {
+    setEmptyState(
+      `Ready to open "${book.title}"`,
+      `By ${book.author} · ID ${book.id} — open its EPUB or PDF from the Books panel to begin.`
+    );
+    return;
+  }
+
+  if (source.source === 'gutenberg') {
+    setEmptyState(
+      `Fetching "${book.title}" from Project Gutenberg…`,
+      `Linked to Gutenberg #${source.externalId} — this tests whether the id pairing actually works end-to-end.`
+    );
+    if (!window.CatalogSearch) {
+      setEmptyState('Could not fetch automatically', 'catalog-search.js did not load. Open the file manually from the Books panel instead.');
+      return;
+    }
+    CatalogSearch.fetchGutenbergFile(source.externalId).then(({ blob, filename }) => {
+      const file = new File([blob], filename, { type: blob.type });
+      openBook(file);
+      showReaderToast(`Fetched from Project Gutenberg (#${source.externalId})`);
+    }).catch(err => {
+      console.error('[Gutenberg fetch]', err);
+      setEmptyState(
+        'Automatic fetch failed',
+        `${err.message} You can still download the file yourself from gutenberg.org/ebooks/${source.externalId} and open it from the Books panel — the id (${book.id}) is already linked, so it'll attach correctly.`
+      );
+    });
+    return;
+  }
+
+  // Internet Archive auto-fetch isn't built yet — this is next in line.
+  setEmptyState(
+    `Linked to Internet Archive`,
+    `"${book.title}" is linked to Archive item "${source.externalId}", but automatic fetching from Archive isn't built yet — open the file manually from the Books panel for now.`
+  );
 })();
 </script>
 </body>
