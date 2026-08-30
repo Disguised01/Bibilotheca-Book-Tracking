@@ -1231,8 +1231,8 @@ function openEditCard(e, ri, si, bi) {
   const shelf = data[ri].shelves[si];
   const book  = shelf.books[bi];
   const theme = THEMES[data[ri].theme] || THEMES.philosophy;
-  editingRef = { ri, si, bi };
-  showCard(e, book);
+  showCard(e, book); // commits/clears any previously-open edit card first
+  editingRef = { ri, si, bi }; // set AFTER showCard, which would otherwise wipe it
   cardPinned = true;
   bookCard.classList.add('pinned', 'editing');
   editPagesRead.value  = book.pagesRead  || '';
