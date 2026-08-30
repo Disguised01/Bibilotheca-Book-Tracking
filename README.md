@@ -25,5 +25,17 @@ Open `index.html` in any modern browser. Add an almirah at the bottom of the pag
 
 All data stays in your browser's localStorage — nothing is sent anywhere. Use **Export Backup** regularly since localStorage can be cleared by the browser or lost if you switch devices.
 
+## Gutenberg automatic reading
+
+GitHub Pages cannot fetch Gutenberg EPUB files directly because Gutenberg does not allow browser CORS requests. Deploy the included Supabase Edge Function once, from the project root:
+
+```text
+supabase login
+supabase link --project-ref ewwhbstfgyzmjrmiufaq
+supabase functions deploy gutenberg-proxy --no-verify-jwt
+```
+
+After deployment, linked Gutenberg books open automatically in the normal two-page EPUB reader.
+
 ---
 

@@ -19,6 +19,7 @@
   // — no key needed, returns clean JSON (title/author/id), which is far
   // easier to work with than Gutenberg's own bulk RDF/catalog files.
   const GUTENDEX_BASE = 'https://gutendex.com/books';
+  const GUTENBERG_PROXY = 'https://ewwhbstfgyzmjrmiufaq.supabase.co/functions/v1/gutenberg-proxy';
 
   async function searchGutenberg(query) {
     const url = `${GUTENDEX_BASE}?search=${encodeURIComponent(query)}`;
@@ -102,7 +103,8 @@
 
     let res;
     try {
-      res = await fetch(url);
+      const proxyUrl = `${GUTENBERG_PROXY}?url=${encodeURIComponent(url)}`;
+      res = await fetch(proxyUrl);
     } catch (e) {
       // A network-level failure with no response at all is the CORS
       // fingerprint mentioned above — surface that plainly rather than
