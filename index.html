@@ -700,6 +700,7 @@ header h1 {
       <span class="card-id-hint">click to copy</span>
     </div>
     <button class="card-read-btn" id="cardReadBtn">📖 Read this book</button>
+    <button class="card-read-btn" id="cardLinkBtn" style="margin-top:6px;">🔗 Link to online copy</button>
     <div class="card-edit" id="cardEdit">
       <div class="edit-row"><label>Pages read</label><input type="number" min="0" id="editPagesRead" placeholder="0"></div>
       <div class="edit-row"><label>Total pages</label><input type="number" min="0" id="editPagesTotal" placeholder="0"></div>
@@ -1191,6 +1192,13 @@ function showCard(e, book) {
   cardId.onclick = () => {
     if (!book.id) return;
     navigator.clipboard.writeText(book.id).then(() => toast('ID copied'));
+  };
+  const cardLinkBtn = document.getElementById('cardLinkBtn');
+  const isLinked = window.BookSources && book.id && BookSources.hasSource(book.id);
+  cardLinkBtn.textContent = isLinked ? '🔗 Linked — manage' : '🔗 Link to online copy';
+  cardLinkBtn.onclick = () => {
+    if (!book.id) { toast('This book has no ID yet'); return; }
+    if (typeof openLinkModal === 'function') openLinkModal(book);
   };
   bookCard.classList.add('active');
   posCard(e);

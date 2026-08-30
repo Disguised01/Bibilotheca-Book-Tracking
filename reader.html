@@ -881,6 +881,16 @@ button { color: inherit; }
   color: var(--accent-dark);
   font-size: 12px;
 }
+.reader-spinner {
+  width: 26px; height: 26px; margin: 0 auto 14px;
+  border: 3px solid rgba(214,163,95,0.25);
+  border-top-color: #d6a35f;
+  border-radius: 50%;
+  animation: reader-spin 0.8s linear infinite;
+}
+@keyframes reader-spin { to { transform: rotate(360deg); } }
+.reader-empty.is-loading strong { text-align: center; }
+.reader-empty.is-loading span { text-align: center; }
 
 body.dark-mode { --paper: #211d19; --paper-deep: #332b24; --line: rgba(244, 225, 195, .16); --muted: #b6a999; }
 .dark-mode .topbar { background: rgba(18, 8, 5, .86); }
@@ -1720,6 +1730,24 @@ function showError(message) {
   readerError.textContent = message;
 }
 
+function showLoadingState(strongText, spanText) {
+  readerError.hidden = true;
+  epubViewer.hidden = true;
+  pdfViewer.hidden = true;
+  readerEmpty.hidden = false;
+  readerEmpty.classList.add('is-loading');
+  readerEmpty.innerHTML = '';
+  const spinner = document.createElement('div');
+  spinner.className = 'reader-spinner';
+  const strong = document.createElement('strong');
+  strong.textContent = strongText;
+  const span = document.createElement('span');
+  span.textContent = spanText;
+  readerEmpty.appendChild(spinner);
+  readerEmpty.appendChild(strong);
+  readerEmpty.appendChild(span);
+}
+
 function setBookTitle(name) {
   const title = name.replace(/\.(epub|pdf)$/i, '') || 'Untitled book';
   currentDisplayTitle = title;
@@ -1819,10 +1847,7 @@ async function openBook(file) {
     return;
   }
 
-  readerError.hidden = true;
-  readerEmpty.hidden = true;
-  epubViewer.hidden = extension !== 'epub';
-  pdfViewer.hidden = extension !== 'pdf';
+  showLoadingState(`Opening "${file.name}"…`, 'Parsing and rendering the book — this can take a moment for large files.');
   currentFileName = file.name;
   setBookTitle(file.name);
   // If the user arrived here via a "Read this book" link (reader.html?bookId=NNNNNN),
@@ -1854,6 +1879,9 @@ async function openBook(file) {
       pdfPageNumber = 1;
       await renderPdfPage(readingScale);
       await restoreBookmark();
+      readerEmpty.hidden = true;
+      readerEmpty.classList.remove('is-loading');
+      pdfViewer.hidden = false;
       return;
     }
 
@@ -1890,7 +1918,11 @@ async function openBook(file) {
     await finalizeEpubLayout();
     applyReaderTheme();
     await restoreBookmark();
+    readerEmpty.hidden = true;
+    readerEmpty.classList.remove('is-loading');
+    epubViewer.hidden = false;
   } catch (error) {
+    readerEmpty.classList.remove('is-loading');
     showError(`Unable to open this ${extension.toUpperCase()}: ${error.message}`);
   }
 }
@@ -2050,6 +2082,7 @@ if (window.BiblioSync) {
   requestedBookId = requested;
 
   function setEmptyState(strongText, spanText) {
+    readerEmpty.classList.remove('is-loading');
     readerEmpty.innerHTML = '';
     const strong = document.createElement('strong');
     strong.textContent = strongText;
@@ -2070,9 +2103,9 @@ if (window.BiblioSync) {
   }
 
   if (source.source === 'gutenberg') {
-    setEmptyState(
+    showLoadingState(
       `Fetching "${book.title}" from Project Gutenberg…`,
-      `Linked to Gutenberg #${source.externalId} — this tests whether the id pairing actually works end-to-end.`
+      `Linked to Gutenberg #${source.externalId} — larger books can take a little while to download.`
     );
     if (!window.CatalogSearch) {
       setEmptyState('Could not fetch automatically', 'catalog-search.js did not load. Open the file manually from the Books panel instead.');
