@@ -813,8 +813,7 @@ button { color: inherit; }
 #epubViewer { scrollbar-width: none; }
 #epubViewer::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .viewer-surface > #epubViewer,
-.viewer-surface > #pdfViewer,
-.viewer-surface > #webViewer {
+.viewer-surface > #pdfViewer {
   position: absolute;
   inset: 0;
   z-index: 2;
@@ -835,23 +834,6 @@ button { color: inherit; }
 }
 #epubViewer iframe {
   display: block;
-  border: 0;
-}
-#webViewer {
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  min-width: 0;
-  overflow: hidden;
-  background: #f9f0df;
-}
-#webViewer[hidden] {
-  display: none !important;
-}
-#webViewer iframe {
-  display: block;
-  width: 100%;
-  height: 100%;
   border: 0;
 }
 #pdfViewer {
@@ -1050,7 +1032,6 @@ body.dark-mode { --paper: #211d19; --paper-deep: #332b24; --line: rgba(244, 225,
                 <span>Open an EPUB or PDF from the Books panel to begin.</span>
               </div>
               <div id="epubViewer" hidden></div>
-              <div id="webViewer" hidden></div>
               <div id="pdfViewer" hidden>
                 <canvas id="pdfCanvas"></canvas>
                 <canvas id="pdfCanvasNext"></canvas>
@@ -1109,7 +1090,6 @@ const readerEmpty = document.getElementById('readerEmpty');
 const readerError = document.getElementById('readerError');
 const viewerSurface = document.getElementById('viewerSurface');
 const epubViewer = document.getElementById('epubViewer');
-const webViewer = document.getElementById('webViewer');
 const pdfCanvas = document.getElementById('pdfCanvas');
 const pdfViewer = document.getElementById('pdfViewer');
 const pdfCanvasNext = document.getElementById('pdfCanvasNext');
@@ -1300,7 +1280,6 @@ function destroyEpub() {
     epubRendition = null;
   }
   epubViewer.innerHTML = '';
-  webViewer.innerHTML = '';
   epubBook = null;
   epubNavigation = null;
   epubBookTotalLocations = 0;
@@ -1736,7 +1715,6 @@ async function initEpubBookLocations(book) {
 function showError(message) {
   readerEmpty.hidden = true;
   epubViewer.hidden = true;
-  webViewer.hidden = true;
   pdfViewer.hidden = true;
   readerError.hidden = false;
   readerError.textContent = message;
@@ -1844,7 +1822,6 @@ async function openBook(file) {
   readerError.hidden = true;
   readerEmpty.hidden = true;
   epubViewer.hidden = extension !== 'epub';
-  webViewer.hidden = true;
   pdfViewer.hidden = extension !== 'pdf';
   currentFileName = file.name;
   setBookTitle(file.name);
@@ -2032,39 +2009,6 @@ linkedBookId.addEventListener('click', () => {
 
 refreshNotesUI();
 
-async function openGutenbergHtml(externalId, book) {
-  const formats = await CatalogSearch.getGutenbergFormats(externalId);
-  const htmlUrl = formats['text/html'] || formats['text/html; charset=utf-8'];
-  if (!htmlUrl) throw new Error('This Gutenberg book has no HTML edition available.');
-
-  destroyEpub();
-  pdfDocument = null;
-  readerType = 'web';
-  currentFileName = `gutenberg-${externalId}.html`;
-  currentPage = 1;
-  currentTotalPages = 0;
-  currentProgress = 0;
-  setBookTitle(book.title);
-  const frame = document.createElement('iframe');
-  frame.src = htmlUrl;
-  frame.title = `${book.title} on Project Gutenberg`;
-  frame.referrerPolicy = 'no-referrer';
-  webViewer.replaceChildren(frame);
-  readerEmpty.hidden = true;
-  epubViewer.hidden = true;
-  webViewer.hidden = false;
-  pdfViewer.hidden = true;
-  readerError.hidden = true;
-  readerPositionPdf.hidden = false;
-  readerPositionPdf.textContent = 'WEB EDITION';
-  readerPositionMain.hidden = true;
-  readerPositionSub.hidden = true;
-  progressBar.style.width = '0%';
-  updateBookIdUI();
-  refreshNotesUI();
-  updateBookmarkUI();
-}
-
 // ─── Account corner ─────────────────────────────────────────────────────
 if (window.BiblioSync) {
   BiblioSync.mountAuthWidget(document.getElementById('syncWidget'));
@@ -2127,20 +2071,22 @@ if (window.BiblioSync) {
 
   if (source.source === 'gutenberg') {
     setEmptyState(
-      `Opening "${book.title}" from Project Gutenberg…`,
-      `Linked to Gutenberg #${source.externalId}.`
+      `Fetching "${book.title}" from Project Gutenberg…`,
+      `Linked to Gutenberg #${source.externalId} — this tests whether the id pairing actually works end-to-end.`
     );
     if (!window.CatalogSearch) {
       setEmptyState('Could not fetch automatically', 'catalog-search.js did not load. Open the file manually from the Books panel instead.');
       return;
     }
-    openGutenbergHtml(source.externalId, book).then(() => {
-      showReaderToast(`Opened Gutenberg web edition (#${source.externalId})`);
-    }).catch(error => {
-      console.error('[Gutenberg fetch]', error);
+    CatalogSearch.fetchGutenbergFile(source.externalId).then(({ blob, filename }) => {
+      const file = new File([blob], filename, { type: blob.type });
+      openBook(file);
+      showReaderToast(`Fetched from Project Gutenberg (#${source.externalId})`);
+    }).catch(err => {
+      console.error('[Gutenberg fetch]', err);
       setEmptyState(
         'Automatic fetch failed',
-        `${error.message} Gutenberg #${source.externalId} is linked to book ID ${book.id}.`
+        `${err.message} You can still download the file yourself from gutenberg.org/ebooks/${source.externalId} and open it from the Books panel — the id (${book.id}) is already linked, so it will attach correctly.`
       );
     });
     return;
