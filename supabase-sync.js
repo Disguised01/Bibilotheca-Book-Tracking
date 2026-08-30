@@ -2,25 +2,38 @@
  * Bibliotheca — Supabase auth + sync layer
  * ─────────────────────────────────────────────────────────────────────────
  * Loaded by both index.html and reader.html, AFTER the supabase-js CDN
- * script tag and BEFORE each page's own <script> block, so the interception
- * below is in place before the app's load()/save() functions ever run.
+ * script tag and BEFORE any module that wants to sync a localStorage key
+ * (book-sources.js, and each page's own <script> block).
  *
- * What this does:
- *  1. Wraps localStorage.setItem so every write to a synced key also stamps
- *     a shadow "<key>__ts" timestamp and schedules a debounced push to
- *     Supabase. The app's existing save() functions don't need to change.
- *  2. On page load, if signed in, pulls each synced key from Supabase and
- *     compares its server timestamp to the local shadow timestamp. If the
- *     server copy is newer (e.g. edited on another device), it overwrites
- *     localStorage and reloads the page once so the app re-parses cleanly.
- *  3. Exposes a tiny magic-link auth UI (sign in / sign out / status) via
- *     BiblioSync.mountAuthWidget(containerEl).
+ * SYNC MODEL: a registry, not a hardcoded key list.
+ * Any module can call BiblioSync.registerSyncTarget({...}) to have one of
+ * its localStorage keys synced to Supabase, each with its own rules for
+ * what actually gets uploaded and how a pull gets merged back in. Two
+ * targets are registered today:
+ *   - library (registered below)      — rack/shelf/book structure only
+ *   - book_sources (in book-sources.js) — the Gutenberg/Archive id pairing
+ * Neither module needs to know about the other, or about the mechanics of
+ * pushing/pulling — they just describe their own strip/merge rules.
  *
- * Design choice: pull-then-reload rather than live in-place merging. The
- * app's index.html/reader.html read localStorage once at script-parse time
- * into in-memory state; reconciling that live would mean touching render
- * internals on both pages. A single guarded reload is simpler and correct,
- * at the cost of one extra reload the first time newer data is found.
+ * registerSyncTarget({
+ *   localKey,       // the localStorage key to watch, e.g. 'bibliotheca-library-v4'
+ *   remoteKey,      // the `library_data.key` value to store it under
+ *   strip(fullLocalValue) -> value to upload (keep payloads small/scoped)
+ *   merge(remoteValue, currentFullLocalValue) -> value to write back locally
+ *   reloadOnChange, // true if the host page caches this data in memory at
+ *                   // parse time and needs a reload to see a pulled update
+ *                   // (true for library; false for book-sources, which
+ *                   // re-reads localStorage on every call)
+ * })
+ *
+ * What this does, mechanically:
+ *  1. Wraps localStorage.setItem — a write to any registered key stamps a
+ *     shadow "<key>__ts" timestamp and schedules a debounced push of that
+ *     key's stripped value.
+ *  2. On sign-in (and whenever a new target registers while already
+ *     signed in), pulls every registered key from Supabase and merges it
+ *     into the corresponding localStorage key via that target's merge().
+ *  3. Exposes a tiny magic-link auth UI via BiblioSync.mountAuthWidget().
  */
 
 (function (global) {
@@ -31,17 +44,6 @@
   const SUPABASE_URL = 'https://ewwhbstfgyzmjrmiufaq.supabase.co/';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3d2hic3RmZ3l6bWpybWl1ZmFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMTQzODksImV4cCI6MjEwMzU5MDM4OX0.8FdqGpIEt0AVKZnIdMwAB_OL4g55wn8NTPQFfg7lxtA';
 
-  // localStorage key  →  Supabase `library_data.key` value.
-  // Every page includes whichever of these keys it actually uses; keys not
-  // present in localStorage on a given page are simply skipped.
-  const KEY_MAP = {
-    'bibliotheca-library-v4': 'library',
-    'bibliotheca-active-rack': 'active_rack',
-    'bibliotheca-bookmarks': 'bookmarks',
-    'bibliotheca-sticky-notes': 'sticky_notes',
-    'bibliotheca-reader-mappings': 'reader_mappings',
-  };
-
   const TABLE = 'library_data';
   const PUSH_DEBOUNCE_MS = 1500;
   const RELOAD_GUARD_KEY = 'bibliotheca-sync-reloaded-once';
@@ -50,6 +52,7 @@
   let session = null;
   let statusListeners = [];
   const pushTimers = {};
+  const targets = {}; // localKey -> { remoteKey, strip, merge, reloadOnChange }
 
   // ── Client bootstrap ─────────────────────────────────────────────────
   function getClient() {
@@ -78,7 +81,7 @@
 
   Storage.prototype.setItem = function (key, value) {
     _setItem(key, value);
-    if (this === localStorage && KEY_MAP[key]) {
+    if (this === localStorage && targets[key]) {
       _setItem(key + '__ts', String(Date.now()));
       schedulePush(key);
     }
@@ -86,21 +89,22 @@
 
   function schedulePush(localKey) {
     clearTimeout(pushTimers[localKey]);
-    pushTimers[localKey] = setTimeout(() => pushKey(localKey), PUSH_DEBOUNCE_MS);
+    pushTimers[localKey] = setTimeout(() => pushTarget(localKey), PUSH_DEBOUNCE_MS);
   }
 
-  async function pushKey(localKey) {
+  async function pushTarget(localKey) {
     const sb = getClient();
-    if (!sb || !session) return; // not signed in / not configured — local-only, fine
-    const remoteKey = KEY_MAP[localKey];
-    const value = _getItem(localKey);
-    if (value === null) return;
-    let parsed;
-    try { parsed = JSON.parse(value); } catch (e) { parsed = value; }
+    const target = targets[localKey];
+    if (!sb || !session || !target) return; // not signed in / not configured — local-only, fine
+    const raw = _getItem(localKey);
+    if (raw === null) return;
+    let fullValue;
+    try { fullValue = JSON.parse(raw); } catch (e) { return; }
+    const stripped = target.strip ? target.strip(fullValue) : fullValue;
     setStatus('syncing');
     const { error } = await sb
       .from(TABLE)
-      .upsert({ user_id: session.user.id, key: remoteKey, value: parsed }, { onConflict: 'user_id,key' });
+      .upsert({ user_id: session.user.id, key: target.remoteKey, value: stripped }, { onConflict: 'user_id,key' });
     setStatus(error ? 'error' : 'synced');
     if (error) console.error('[BiblioSync] push failed for', localKey, error);
   }
@@ -109,36 +113,58 @@
   async function pullAndReconcile() {
     const sb = getClient();
     if (!sb || !session) return;
+    const localKeys = Object.keys(targets);
+    if (!localKeys.length) return;
+    const remoteKeys = localKeys.map(lk => targets[lk].remoteKey);
+
     setStatus('syncing');
     const { data: rows, error } = await sb
       .from(TABLE)
       .select('key, value, updated_at')
-      .eq('user_id', session.user.id);
+      .eq('user_id', session.user.id)
+      .in('key', remoteKeys);
     if (error) { setStatus('error'); console.error('[BiblioSync] pull failed', error); return; }
+    setStatus('synced');
 
-    const reverseMap = Object.fromEntries(Object.entries(KEY_MAP).map(([lk, rk]) => [rk, lk]));
-    let appliedNewer = false;
+    const reverseMap = Object.fromEntries(localKeys.map(lk => [targets[lk].remoteKey, lk]));
+    let needsReload = false;
 
     (rows || []).forEach(row => {
       const localKey = reverseMap[row.key];
-      if (!localKey) return;
+      const target = targets[localKey];
+      if (!target) return;
+
       const localTs = parseInt(_getItem(localKey + '__ts') || '0', 10);
       const remoteTs = new Date(row.updated_at).getTime();
       const localValueExists = _getItem(localKey) !== null;
 
       if (!localValueExists || remoteTs > localTs) {
-        rawSet(localKey, JSON.stringify(row.value));
+        const currentFull = (() => {
+          try { return JSON.parse(_getItem(localKey) || 'null'); } catch (e) { return null; }
+        })();
+        const merged = target.merge ? target.merge(row.value, currentFull) : row.value;
+        rawSet(localKey, JSON.stringify(merged));
         rawSet(localKey + '__ts', String(remoteTs));
-        appliedNewer = true;
+        if (target.reloadOnChange) needsReload = true;
       }
     });
 
-    setStatus('synced');
-
-    if (appliedNewer && !sessionStorage.getItem(RELOAD_GUARD_KEY)) {
+    if (needsReload && !sessionStorage.getItem(RELOAD_GUARD_KEY)) {
       sessionStorage.setItem(RELOAD_GUARD_KEY, '1');
       global.location.reload();
     }
+  }
+
+  /** Register a localStorage key to be synced. See header comment for shape. */
+  function registerSyncTarget(cfg) {
+    if (!cfg || !cfg.localKey || !cfg.remoteKey) {
+      throw new Error('[BiblioSync] registerSyncTarget needs localKey and remoteKey');
+    }
+    targets[cfg.localKey] = cfg;
+    // If we're already signed in when this registers (e.g. book-sources.js
+    // loading after auth already resolved), pull this target in immediately
+    // rather than waiting for the next sign-in event.
+    if (session) pullAndReconcile();
   }
 
   // ── Auth ──────────────────────────────────────────────────────────────
@@ -247,8 +273,64 @@
     signOut,
     mountAuthWidget,
     onStatus,
+    registerSyncTarget,
     getSession: () => session,
   };
+
+  // ── Library sync target (structure only — see header comment) ───────
+  // Full local shape: [{ title, theme, label, shelves: [{ title, desc,
+  //   color, books: [{ id, author, title, note, done, pagesRead,
+  //   pagesTotal, startDate, completionDate, color }] }] }]
+  // Stripped remote shape: only what's listed below.
+  function stripLibrary(fullData) {
+    if (!Array.isArray(fullData)) return [];
+    return fullData.map(rack => ({
+      title: rack.title || 'Untitled',
+      theme: rack.theme || 'philosophy',
+      shelves: (rack.shelves || []).map(shelf => ({
+        title: shelf.title || 'Shelf',
+        books: (shelf.books || []).map(b => ({
+          id: b.id, title: b.title, author: b.author, done: !!b.done,
+        })),
+      })),
+    }));
+  }
+
+  // Merge a stripped remote structure into the current full local library.
+  // Existing books (matched by id) keep every local-only field; only
+  // title/author/done are refreshed from remote. New books arrive with
+  // just the synced fields — notes/progress start empty on this device
+  // until the person adds them here, which is expected for unsynced data.
+  function mergeLibrary(remoteStripped, currentFullLocal) {
+    const localFull = Array.isArray(currentFullLocal) ? currentFullLocal : [];
+    const localBooksById = {};
+    localFull.forEach(rack => (rack.shelves || []).forEach(shelf =>
+      (shelf.books || []).forEach(b => { if (b.id) localBooksById[b.id] = b; })
+    ));
+
+    return (remoteStripped || []).map(rack => ({
+      title: rack.title,
+      theme: rack.theme,
+      shelves: (rack.shelves || []).map(shelf => ({
+        title: shelf.title,
+        books: (shelf.books || []).map(rb => {
+          const existing = localBooksById[rb.id];
+          if (existing) {
+            return { ...existing, title: rb.title, author: rb.author, done: rb.done };
+          }
+          return { id: rb.id, title: rb.title, author: rb.author, done: rb.done, note: '' };
+        }),
+      })),
+    }));
+  }
+
+  registerSyncTarget({
+    localKey: 'bibliotheca-library-v4',
+    remoteKey: 'library',
+    strip: stripLibrary,
+    merge: mergeLibrary,
+    reloadOnChange: true, // index.html/reader.html cache `data` in memory at parse time
+  });
 
   // Auto-init once DOM is ready.
   if (document.readyState === 'loading') {

@@ -10,6 +10,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="supabase-sync.js"></script>
+<script src="book-sources.js"></script>
 <style>
 :root {
   --ink: #272521;
@@ -129,6 +132,74 @@ button { color: inherit; }
   border-radius: 50%;
   font-family: 'Newsreader', serif;
   font-size: 16px;
+}
+
+/* ── Account corner (reader theme) ── */
+.account-corner { position: relative; margin-left: 6px; }
+.account-avatar {
+  position: relative;
+  width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center;
+  color: var(--accent-dark); background: #ead0be;
+  border: none; font-family: 'Newsreader', serif; font-size: 16px;
+  cursor: pointer; transition: filter .2s;
+}
+.account-avatar:hover { filter: brightness(1.08); }
+.account-avatar.signed-in { background: #f2dfc5; }
+.account-dot {
+  position: absolute; bottom: 0; right: 0; width: 9px; height: 9px;
+  border-radius: 50%; background: #8a8177; border: 2px solid var(--wood-dark);
+}
+.account-dot.on { background: #6fbf73; }
+.account-tray {
+  display: none; position: absolute; top: 44px; right: 0;
+  width: 270px; background: #241713;
+  border: 1px solid rgba(255,226,181,0.2); border-radius: 10px;
+  padding: 16px; box-shadow: 0 30px 70px rgba(0,0,0,0.7); z-index: 4000;
+}
+.account-tray.open { display: block; }
+.tray-section { margin-bottom: 16px; }
+.tray-section:last-child { margin-bottom: 0; }
+.tray-label {
+  font-family: 'Newsreader', serif; font-size: 11px; letter-spacing: .06em;
+  text-transform: uppercase; color: rgba(255,226,181,0.45);
+  margin-bottom: 8px; padding-bottom: 5px;
+  border-bottom: 1px solid rgba(255,226,181,0.12);
+}
+.tray-feature-btn {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; text-align: left; font-family: 'Manrope', sans-serif;
+  font-size: 12px; background: rgba(255,255,255,0.02);
+  color: rgba(238,227,211,0.4); border: 1px solid rgba(255,226,181,0.08);
+  padding: 8px 10px; border-radius: 5px; margin-bottom: 6px;
+  cursor: not-allowed;
+}
+.tray-feature-btn:last-child { margin-bottom: 0; }
+.tray-feature-btn .soon {
+  font-family: 'Newsreader', serif; font-size: 8px; letter-spacing: .06em;
+  text-transform: uppercase; color: rgba(255,226,181,0.3);
+  border: 1px solid rgba(255,226,181,0.18); border-radius: 3px; padding: 2px 6px;
+}
+#syncWidget input#bsyncEmail {
+  width: 100%; margin-bottom: 7px; box-sizing: border-box;
+  font-family: 'Manrope', sans-serif; font-size: 12px; padding: 7px 9px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,226,181,0.2);
+  border-radius: 4px; color: #eee3d3;
+}
+#syncWidget #bsyncSendLink, #syncWidget #bsyncSignOut {
+  width: 100%; margin-top: 2px; font-family: 'Manrope', sans-serif;
+  font-size: 11px; background: transparent; border: 1px solid rgba(255,226,181,0.25);
+  color: #d8b98f; padding: 7px; border-radius: 4px; cursor: pointer;
+}
+#syncWidget #bsyncSendLink:hover, #syncWidget #bsyncSignOut:hover { background: rgba(255,226,181,0.08); }
+#syncWidget #bsyncStatus {
+  display: block; margin-bottom: 7px; font-family: 'Newsreader', serif;
+  font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+  color: rgba(255,226,181,0.4);
+}
+#syncWidget #bsyncSignedIn { display: flex; flex-direction: column; gap: 6px; }
+#syncWidget #bsyncEmailLabel {
+  font-family: 'Newsreader', serif; font-size: 12px; color: #f2dfc5; word-break: break-all;
 }
 
 .sidebar {
@@ -881,7 +952,25 @@ body.dark-mode { --paper: #211d19; --paper-deep: #332b24; --line: rgba(244, 225,
       <button class="icon-btn library-toggle" id="libraryToggle" aria-expanded="false">☰ Books</button>
       <button class="icon-btn" aria-label="Search">⌕</button>
       <button class="icon-btn" id="themeToggle" aria-label="Toggle dark mode">☾</button>
-      <span class="avatar" aria-label="Profile">A</span>
+      <div class="account-corner" id="accountCorner">
+        <button class="account-avatar" id="accountAvatarBtn" aria-label="Account">
+          <span id="accountAvatarLetter">＋</span>
+          <span class="account-dot" id="accountDot"></span>
+        </button>
+        <div class="account-tray" id="accountTray">
+          <div class="tray-section">
+            <div class="tray-label">Account &amp; Sync</div>
+            <div id="syncWidget"></div>
+          </div>
+          <div class="tray-section">
+            <div class="tray-label">Planned Features</div>
+            <button class="tray-feature-btn" disabled>Google Drive books <span class="soon">Soon</span></button>
+            <button class="tray-feature-btn" disabled>Dropbox books <span class="soon">Soon</span></button>
+            <button class="tray-feature-btn" disabled>Project Gutenberg catalog <span class="soon">Soon</span></button>
+            <button class="tray-feature-btn" disabled>Internet Archive catalog <span class="soon">Soon</span></button>
+          </div>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -1041,6 +1130,7 @@ let readerType = null;
 let currentPage = 0;
 let currentTotalPages = 0;
 let currentBookId = null;
+let requestedBookId = null; // set from ?bookId= in the URL — see init at bottom of file
 let currentFileName = null;
 let currentDisplayTitle = '';
 let currentProgress = 0;
@@ -1733,7 +1823,18 @@ async function openBook(file) {
   pdfViewer.hidden = extension !== 'pdf';
   currentFileName = file.name;
   setBookTitle(file.name);
-  currentBookId = resolveBookId(file.name, file.name);
+  // If the user arrived here via a "Read this book" link (reader.html?bookId=NNNNNN),
+  // trust that exact id over filename/title guessing — it's precise, unlike
+  // resolveBookId's fuzzy title match.
+  if (requestedBookId && findBookById(requestedBookId)) {
+    currentBookId = requestedBookId;
+    const mappings = loadMappings();
+    mappings[file.name] = requestedBookId;
+    saveMappings(mappings);
+    requestedBookId = null;
+  } else {
+    currentBookId = resolveBookId(file.name, file.name);
+  }
   currentProgress = 0;
   currentLocationCfi = null;
   updateBookIdUI();
@@ -1905,6 +2006,54 @@ linkedBookId.addEventListener('click', () => {
 });
 
 refreshNotesUI();
+
+// ─── Account corner ─────────────────────────────────────────────────────
+if (window.BiblioSync) {
+  BiblioSync.mountAuthWidget(document.getElementById('syncWidget'));
+
+  const avatarBtn = document.getElementById('accountAvatarBtn');
+  const avatarLetter = document.getElementById('accountAvatarLetter');
+  const avatarDot = document.getElementById('accountDot');
+  const tray = document.getElementById('accountTray');
+  const corner = document.getElementById('accountCorner');
+
+  avatarBtn.addEventListener('click', e => { e.stopPropagation(); tray.classList.toggle('open'); });
+  document.addEventListener('click', e => {
+    if (!corner.contains(e.target)) tray.classList.remove('open');
+  });
+
+  BiblioSync.onStatus(status => {
+    const session = BiblioSync.getSession && BiblioSync.getSession();
+    const signedIn = status === 'signed-in' || status === 'syncing' || status === 'synced';
+    avatarBtn.classList.toggle('signed-in', signedIn);
+    avatarDot.classList.toggle('on', signedIn);
+    if (signedIn && session && session.user && session.user.email) {
+      avatarLetter.textContent = session.user.email[0].toUpperCase();
+    } else {
+      avatarLetter.textContent = '＋';
+    }
+  });
+}
+
+// ─── Arrived via "Read this book" from the shelf (reader.html?bookId=NNNNNN) ──
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const requested = params.get('bookId');
+  if (!requested || !/^\d{6}$/.test(requested)) return;
+  const book = findBookById(requested);
+  if (!book) {
+    showReaderToast('No shelf book with that ID');
+    return;
+  }
+  requestedBookId = requested;
+  readerEmpty.innerHTML = '';
+  const strong = document.createElement('strong');
+  strong.textContent = `Ready to open "${book.title}"`;
+  const span = document.createElement('span');
+  span.textContent = `By ${book.author} · ID ${book.id} — open its EPUB or PDF from the Books panel to begin.`;
+  readerEmpty.appendChild(strong);
+  readerEmpty.appendChild(span);
+})();
 </script>
 </body>
 </html>
