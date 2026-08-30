@@ -131,14 +131,19 @@
   }
 
   // Prefer EPUB (renders with epub.js already in the app); fall back to
-  // the plain-text OCR transcript (commonly named "<id>_djvu.txt") if
-  // that's all this particular item offers.
+  // a PDF (the reader already supports PDFs, and many Google-scanned
+  // items on Archive only ship a PDF with no EPUB derivative). A plain
+  // OCR ".txt" transcript is deliberately not offered as a fallback —
+  // this reader can't open bare text files either way.
   async function fetchArchiveFile(identifier) {
     const files = await getArchiveFiles(identifier);
     const epubFile = files.find(f => (f.format || '').toLowerCase().includes('epub') || /\.epub$/i.test(f.name || ''));
-    const textFile = files.find(f => /_djvu\.txt$/i.test(f.name || '') || (f.format || '').toLowerCase().includes('djvutxt'));
-    const chosen = epubFile || textFile;
-    if (!chosen) throw new Error('This Archive item has no EPUB or plain-text file available.');
+    // Avoid picking up small excerpt/abbyy PDFs when a proper full PDF exists;
+    // prefer a file literally named "<identifier>.pdf" if present, else any .pdf.
+    const pdfFile = files.find(f => f.name === `${identifier}.pdf`) ||
+      files.find(f => (f.format || '').toLowerCase().includes('pdf') || /\.pdf$/i.test(f.name || ''));
+    const chosen = epubFile || pdfFile;
+    if (!chosen) throw new Error('This Archive item has no EPUB or PDF file available.');
 
     const url = `https://archive.org/download/${encodeURIComponent(identifier)}/${encodeURIComponent(chosen.name)}`;
     let res;
@@ -149,7 +154,7 @@
     }
     if (!res.ok) throw new Error(`Archive file request failed (${res.status})`);
     const blob = await res.blob();
-    const filename = epubFile ? `archive-${identifier}.epub` : `archive-${identifier}.txt`;
+    const filename = epubFile ? `archive-${identifier}.epub` : `archive-${identifier}.pdf`;
     return { blob, filename, isEpub: !!epubFile };
   }
 
