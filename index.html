@@ -1519,6 +1519,14 @@ colorModal.addEventListener('click', (e) => {
 });
 
 // ─── MANAGE ───────────────────────────────────────────────────────────────────
+// Tracks which almirah/shelf sections are expanded, by object reference —
+// renderManage() rebuilds the whole panel from scratch on every call (e.g.
+// after adding a book or reordering shelves), so without this the expand
+// state would reset to collapsed every time. Using the object itself as
+// the key (not an index) keeps this correct even when shelves get reordered.
+const expandedRacks = new WeakSet();
+const expandedShelves = new WeakSet();
+
 function renderManage() {
   const container = document.getElementById('manageList');
   container.innerHTML = '';
@@ -1529,13 +1537,14 @@ function renderManage() {
 
     const rHead = document.createElement('div');
     rHead.className = 'rack-head';
+    const rackWasOpen = expandedRacks.has(rack);
     rHead.innerHTML = `
       <input class="rack-title-input" type="text" value="${esc(rack.title)}" title="Almirah name">
       <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <input class="rack-label-input" type="text" placeholder="Catalogue label" value="${esc(rack.label || '')}" style="width:120px;">
         <select class="tier-theme-select"></select>
         <button class="mini-btn view-rack-btn" title="View this almirah">view</button>
-        <span class="tog">▸ expand</span>
+        <span class="tog">${rackWasOpen ? '▾ collapse' : '▸ expand'}</span>
       </span>
     `;
     populateThemeSelect(rHead.querySelector('.tier-theme-select'), rack.theme || 'philosophy');
@@ -1564,10 +1573,12 @@ function renderManage() {
 
     const rBody = document.createElement('div');
     rBody.className = 'rack-body-manage';
+    if (expandedRacks.has(rack)) rBody.classList.add('open');
 
     rHead.addEventListener('click', (e) => {
       if (e.target.closest('input') || e.target.closest('select') || e.target.closest('button')) return;
       const open = rBody.classList.toggle('open');
+      if (open) expandedRacks.add(rack); else expandedRacks.delete(rack);
       rHead.querySelector('.tog').textContent = open ? '▾ collapse' : '▸ expand';
     });
 
@@ -1580,10 +1591,11 @@ function renderManage() {
 
       const sHead = document.createElement('div');
       sHead.className = 'tier-head';
+      const shelfWasOpen = expandedShelves.has(shelf);
       sHead.innerHTML = `
         <span class="shelf-drag-handle" title="Drag to reorder">⠿</span>
         <input class="shelf-title-input" type="text" value="${esc(shelf.title)}" title="Shelf name">
-        <span class="tog">▸ expand</span>
+        <span class="tog">${shelfWasOpen ? '▾ collapse' : '▸ expand'}</span>
       `;
       sHead.querySelector('.shelf-title-input').addEventListener('click', e => e.stopPropagation());
       sHead.querySelector('.shelf-title-input').addEventListener('change', e => {
@@ -1593,10 +1605,12 @@ function renderManage() {
 
       const sBody = document.createElement('div');
       sBody.className = 'tier-body';
+      if (shelfWasOpen) sBody.classList.add('open');
 
       sHead.addEventListener('click', (e) => {
         if (e.target.closest('.shelf-title-input') || e.target.closest('.shelf-drag-handle')) return;
         const open = sBody.classList.toggle('open');
+        if (open) expandedShelves.add(shelf); else expandedShelves.delete(shelf);
         sHead.querySelector('.tog').textContent = open ? '▾ collapse' : '▸ expand';
       });
 
