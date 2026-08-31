@@ -517,14 +517,42 @@ header h1 {
   border-radius: 6px; margin-bottom: 10px; overflow: hidden;
 }
 .tier-head {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; gap: 4px;
   padding: 11px 16px; background: rgba(0,0,0,0.25); cursor: pointer;
   font-family: 'Cinzel', serif; font-size: 13px; color: #c5a67c;
   letter-spacing: .06em; user-select: none;
 }
-.tier-head .tog { font-size: 11px; color: var(--gold-dim); }
+.tier-head .tog { font-size: 11px; color: var(--gold-dim); margin-left: auto; flex-shrink: 0; }
 .tier-body { display: none; padding: 12px 16px; }
 .tier-body.open { display: block; }
+.shelf-drag-handle {
+  cursor: grab; color: rgba(212,175,55,0.35); font-size: 15px; margin-right: 4px;
+  flex-shrink: 0; user-select: none;
+}
+.shelf-drag-handle:active { cursor: grabbing; }
+.rack-title-input, .shelf-title-input {
+  font-family: 'Cinzel', serif; letter-spacing: .06em; color: inherit;
+  background: transparent; border: 1px solid transparent; border-radius: 3px;
+  padding: 3px 6px; flex: 1; min-width: 0;
+}
+.rack-title-input { font-size: 14px; color: #e0d5c5; }
+.shelf-title-input { font-size: 13px; color: #c5a67c; }
+.rack-title-input:hover, .shelf-title-input:hover,
+.rack-title-input:focus, .shelf-title-input:focus {
+  border-color: rgba(212,175,55,0.25); background: rgba(0,0,0,0.3); outline: none;
+}
+.shelf-desc-input {
+  width: 100%; box-sizing: border-box; font-family: 'Crimson Pro', serif;
+  font-size: 12px; padding: 6px 9px; margin-bottom: 10px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(212,175,55,0.12);
+  border-radius: 4px; color: rgba(209,199,183,0.7);
+}
+.shelf-sub-block.dragging { opacity: 0.4; }
+.shelf-sub-block.drag-over { border-left-color: var(--gold, #d4af37); box-shadow: inset 0 0 0 1px rgba(212,175,55,0.4); }
+.book.lifting { opacity: 0.35; }
+.book-case.drop-target {
+  outline: 2px dashed rgba(212,175,55,0.6); outline-offset: 4px; border-radius: 4px;
+}
 
 .bmr {
   display: flex; align-items: center; gap: 10px;
@@ -1074,6 +1102,95 @@ function autoHexFor(book, theme) {
 }
 
 // ─── RENDER SHELVES (one almirah visible at a time) ────────────────────────────
+// ─── HOLD-AND-DRAG: move a book to a different shelf ───────────────────────
+// A quick tap still opens the edit card / toggles read state (existing
+// click handler); holding briefly first arms a drag instead. 450ms is used
+// rather than a literal 3s hold — that would feel unresponsive compared to
+// how long-press works in most apps (photo galleries, file managers, etc).
+const BOOK_HOLD_MS = 450;
+let holdTimer = null;
+let bookDragActive = false;
+let bookDragGhost = null;
+let bookDragSource = null; // { ri, si, bi }
+let suppressNextBookClick = false;
+let holdStartX = 0, holdStartY = 0;
+
+function startBookHold(e, el, ri, si, bi) {
+  if (e.button !== undefined && e.button !== 0) return; // left-click / primary touch only
+  holdStartX = e.clientX; holdStartY = e.clientY;
+  clearTimeout(holdTimer);
+  const pointerId = e.pointerId;
+  holdTimer = setTimeout(() => {
+    bookDragActive = true;
+    bookDragSource = { ri, si, bi };
+    el.setPointerCapture(pointerId);
+    bookDragGhost = el.cloneNode(true);
+    bookDragGhost.style.position = 'fixed';
+    bookDragGhost.style.pointerEvents = 'none';
+    bookDragGhost.style.zIndex = '9999';
+    bookDragGhost.style.opacity = '0.85';
+    bookDragGhost.style.transform = 'translate(-50%, -50%) rotate(-3deg)';
+    bookDragGhost.style.left = e.clientX + 'px';
+    bookDragGhost.style.top = e.clientY + 'px';
+    document.body.appendChild(bookDragGhost);
+    el.classList.add('lifting');
+    if (navigator.vibrate) navigator.vibrate(15);
+  }, BOOK_HOLD_MS);
+
+  const onMove = (ev) => {
+    if (!bookDragActive) {
+      // Cancel the hold if the pointer moved meaningfully before it armed
+      // (this was a scroll/swipe gesture, not a hold).
+      if (Math.abs(ev.clientX - holdStartX) > 10 || Math.abs(ev.clientY - holdStartY) > 10) {
+        clearTimeout(holdTimer);
+      }
+      return;
+    }
+    bookDragGhost.style.left = ev.clientX + 'px';
+    bookDragGhost.style.top = ev.clientY + 'px';
+    document.querySelectorAll('.book-case.drop-target').forEach(n => n.classList.remove('drop-target'));
+    bookDragGhost.style.display = 'none';
+    const under = document.elementFromPoint(ev.clientX, ev.clientY);
+    bookDragGhost.style.display = '';
+    const targetCase = under && under.closest('.book-case');
+    if (targetCase) targetCase.classList.add('drop-target');
+  };
+
+  const onUp = (ev) => {
+    clearTimeout(holdTimer);
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    document.removeEventListener('pointercancel', onUp);
+    if (!bookDragActive) return;
+
+    el.classList.remove('lifting');
+    document.querySelectorAll('.book-case.drop-target').forEach(n => n.classList.remove('drop-target'));
+    if (bookDragGhost) { bookDragGhost.remove(); bookDragGhost = null; }
+
+    const under = document.elementFromPoint(ev.clientX, ev.clientY);
+    const targetCase = under && under.closest('.book-case');
+    bookDragActive = false;
+    suppressNextBookClick = true;
+    setTimeout(() => { suppressNextBookClick = false; }, 0);
+
+    if (!targetCase) return;
+    const targetRi = Number(targetCase.dataset.ri);
+    const targetSi = Number(targetCase.dataset.si);
+    const { ri: srcRi, si: srcSi, bi: srcBi } = bookDragSource;
+    if (targetRi === srcRi && targetSi === srcSi) return; // dropped back on same shelf
+
+    const book = data[srcRi].shelves[srcSi].books[srcBi];
+    data[srcRi].shelves[srcSi].books.splice(srcBi, 1);
+    data[targetRi].shelves[targetSi].books.push(book);
+    save(); renderShelves(); renderManage(); updateStats();
+    toast(`Moved "${book.title}" to "${data[targetRi].shelves[targetSi].title}"`);
+  };
+
+  document.addEventListener('pointermove', onMove);
+  document.addEventListener('pointerup', onUp);
+  document.addEventListener('pointercancel', onUp);
+}
+
 function renderShelves() {
   const main = document.getElementById('shelves');
   main.innerHTML = '';
@@ -1146,6 +1263,7 @@ function renderShelves() {
     wrap.querySelector('.shelf-settings-btn').addEventListener('click', () => openColorModal(ri, si));
 
     const bc = wrap.querySelector(`#bc-${ri}-${si}`);
+    bc.dataset.ri = ri; bc.dataset.si = si;
 
     if (!shelf.books.length) {
       bc.innerHTML = `<div style="font-family:'Cinzel',serif;font-size:10px;color:rgba(212,175,55,0.15);letter-spacing:.1em;align-self:center;">empty shelf</div>`;
@@ -1173,6 +1291,7 @@ function renderShelves() {
       el.addEventListener('mousemove',  e => posCard(e));
       el.addEventListener('mouseleave', leaveBookCard);
       el.addEventListener('click', (e) => {
+        if (suppressNextBookClick) { suppressNextBookClick = false; return; }
         if (e.altKey) {
           e.preventDefault();
           shelf.books[bi].done = !shelf.books[bi].done;
@@ -1182,6 +1301,15 @@ function renderShelves() {
         }
         openEditCard(e, ri, si, bi);
       });
+
+      // ── Hold-and-drag to move a book to a different shelf ──────────
+      // touch-action:none is needed on the spine itself for the drag to
+      // track reliably on touch devices — scroll the page from a gap
+      // between spines or the shelf board itself, not from directly on
+      // top of a book.
+      el.style.touchAction = 'none';
+      el.dataset.ri = ri; el.dataset.si = si; el.dataset.bi = bi;
+      el.addEventListener('pointerdown', e => startBookHold(e, el, ri, si, bi));
 
       bc.appendChild(el);
     });
@@ -1402,7 +1530,7 @@ function renderManage() {
     const rHead = document.createElement('div');
     rHead.className = 'rack-head';
     rHead.innerHTML = `
-      <span>${esc(rack.title)}</span>
+      <input class="rack-title-input" type="text" value="${esc(rack.title)}" title="Almirah name">
       <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <input class="rack-label-input" type="text" placeholder="Catalogue label" value="${esc(rack.label || '')}" style="width:120px;">
         <select class="tier-theme-select"></select>
@@ -1421,6 +1549,11 @@ function renderManage() {
       data[ri].label = e.target.value.trim() || undefined;
       save(); renderShelves();
     });
+    rHead.querySelector('.rack-title-input').addEventListener('click', e => e.stopPropagation());
+    rHead.querySelector('.rack-title-input').addEventListener('change', e => {
+      data[ri].title = e.target.value.trim() || rack.title;
+      save(); renderShelves(); renderManage();
+    });
     rHead.querySelector('.view-rack-btn').addEventListener('click', e => {
       e.stopPropagation();
       currentRackIndex = ri;
@@ -1432,7 +1565,8 @@ function renderManage() {
     const rBody = document.createElement('div');
     rBody.className = 'rack-body-manage';
 
-    rHead.addEventListener('click', () => {
+    rHead.addEventListener('click', (e) => {
+      if (e.target.closest('input') || e.target.closest('select') || e.target.closest('button')) return;
       const open = rBody.classList.toggle('open');
       rHead.querySelector('.tog').textContent = open ? '▾ collapse' : '▸ expand';
     });
@@ -1440,18 +1574,43 @@ function renderManage() {
     rack.shelves.forEach((shelf, si) => {
       const shelfBlock = document.createElement('div');
       shelfBlock.className = 'tier-block shelf-sub-block';
+      shelfBlock.draggable = true;
+      shelfBlock.dataset.ri = ri;
+      shelfBlock.dataset.si = si;
 
       const sHead = document.createElement('div');
       sHead.className = 'tier-head';
-      sHead.innerHTML = `<span>${esc(shelf.title)}</span><span class="tog">▸ expand</span>`;
+      sHead.innerHTML = `
+        <span class="shelf-drag-handle" title="Drag to reorder">⠿</span>
+        <input class="shelf-title-input" type="text" value="${esc(shelf.title)}" title="Shelf name">
+        <span class="tog">▸ expand</span>
+      `;
+      sHead.querySelector('.shelf-title-input').addEventListener('click', e => e.stopPropagation());
+      sHead.querySelector('.shelf-title-input').addEventListener('change', e => {
+        data[ri].shelves[si].title = e.target.value.trim() || shelf.title;
+        save(); renderShelves(); renderManage();
+      });
 
       const sBody = document.createElement('div');
       sBody.className = 'tier-body';
 
-      sHead.addEventListener('click', () => {
+      sHead.addEventListener('click', (e) => {
+        if (e.target.closest('.shelf-title-input') || e.target.closest('.shelf-drag-handle')) return;
         const open = sBody.classList.toggle('open');
         sHead.querySelector('.tog').textContent = open ? '▾ collapse' : '▸ expand';
       });
+
+      // Description is editable too, shown as its own row under the header.
+      const descRow = document.createElement('input');
+      descRow.className = 'shelf-desc-input';
+      descRow.type = 'text';
+      descRow.placeholder = 'Shelf description (optional)';
+      descRow.value = shelf.desc || '';
+      descRow.addEventListener('change', e => {
+        data[ri].shelves[si].desc = e.target.value.trim();
+        save(); renderShelves();
+      });
+      sBody.appendChild(descRow);
 
       shelf.books.forEach((book, bi) => {
         const row = document.createElement('div');
@@ -1515,6 +1674,36 @@ function renderManage() {
       shelfBlock.appendChild(sHead);
       shelfBlock.appendChild(sBody);
       rBody.appendChild(shelfBlock);
+    });
+
+    // ── Drag-to-reorder shelves within this almirah ──────────────────
+    let dragSrcSi = null;
+    rBody.querySelectorAll('.shelf-sub-block').forEach(block => {
+      block.addEventListener('dragstart', e => {
+        dragSrcSi = Number(block.dataset.si);
+        block.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      block.addEventListener('dragend', () => {
+        block.classList.remove('dragging');
+        rBody.querySelectorAll('.shelf-sub-block').forEach(b => b.classList.remove('drag-over'));
+      });
+      block.addEventListener('dragover', e => {
+        e.preventDefault();
+        block.classList.add('drag-over');
+      });
+      block.addEventListener('dragleave', () => block.classList.remove('drag-over'));
+      block.addEventListener('drop', e => {
+        e.preventDefault();
+        block.classList.remove('drag-over');
+        const targetSi = Number(block.dataset.si);
+        if (dragSrcSi === null || dragSrcSi === targetSi) return;
+        const shelves = data[ri].shelves;
+        const [moved] = shelves.splice(dragSrcSi, 1);
+        shelves.splice(targetSi, 0, moved);
+        save(); renderShelves(); renderManage();
+        toast('Shelf order updated');
+      });
     });
 
     // add-shelf-to-rack mini form
