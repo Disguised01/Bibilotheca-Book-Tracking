@@ -189,27 +189,33 @@
     return data.files || [];
   }
 
-  // Prefer EPUB (renders with epub.js already in the app); fall back to
-  // a PDF (the reader already supports PDFs, and many Google-scanned
-  // items on Archive only ship a PDF with no EPUB derivative). A plain
-  // OCR ".txt" transcript is deliberately not offered as a fallback —
-  // this reader can't open bare text files either way.
+  // Prefer a PDF over Archive's own auto-generated EPUB derivative.
+  // Archive's EPUB conversion is automated and can produce malformed
+  // manifests (confirmed case: a spine item with an undefined href,
+  // which crashes epub.js deep inside its render queue with an
+  // uncaught exception that never rejects the awaited promise — the
+  // book just hangs forever with no error). The PDF is the actual
+  // scanned source and doesn't go through that conversion, so it's
+  // the more reliable default here even though epub.js is nicer to
+  // read. (Gutenberg's EPUBs are hand-curated, not auto-derived, so
+  // that fetch path still prefers EPUB.)
   function pickArchiveFile(identifier, files) {
     const epubFile = files.find(f => (f.format || '').toLowerCase().includes('epub') || /\.epub$/i.test(f.name || ''));
     // Avoid picking up small excerpt/abbyy PDFs when a proper full PDF exists;
     // prefer a file literally named "<identifier>.pdf" if present, else any .pdf.
     const pdfFile = files.find(f => f.name === `${identifier}.pdf`) ||
       files.find(f => (f.format || '').toLowerCase().includes('pdf') || /\.pdf$/i.test(f.name || ''));
-    return { epubFile, pdfFile, chosen: epubFile || pdfFile };
+    return { epubFile, pdfFile, chosen: pdfFile || epubFile };
   }
 
   /** Lightweight check for the link-search UI: does this Archive item have a readable file? */
   async function checkArchiveAvailability(identifier) {
     try {
       const files = await getArchiveFiles(identifier);
-      const { epubFile, chosen } = pickArchiveFile(identifier, files);
+      const { chosen } = pickArchiveFile(identifier, files);
       if (!chosen) return { available: false };
-      return { available: true, format: epubFile ? 'epub' : 'pdf' };
+      const isEpub = /\.epub$/i.test(chosen.name || '') || (chosen.format || '').toLowerCase().includes('epub');
+      return { available: true, format: isEpub ? 'epub' : 'pdf' };
     } catch (e) {
       return { available: false, unknown: true };
     }
@@ -217,7 +223,7 @@
 
   async function fetchArchiveFile(identifier, onProgress) {
     const files = await getArchiveFiles(identifier);
-    const { epubFile, chosen } = pickArchiveFile(identifier, files);
+    const { chosen } = pickArchiveFile(identifier, files);
     if (!chosen) throw new Error('This Archive item has no EPUB or PDF file available.');
 
     const url = `https://archive.org/download/${encodeURIComponent(identifier)}/${encodeURIComponent(chosen.name)}`;
@@ -228,8 +234,9 @@
       if (e.message && (e.message.includes('Request timed out') || e.message.includes('File request failed'))) throw e;
       throw new Error('Could not reach archive.org directly from the browser (likely a CORS restriction on this file, not a problem with your book\'s id link).');
     }
-    const filename = epubFile ? `archive-${identifier}.epub` : `archive-${identifier}.pdf`;
-    return { blob, filename, isEpub: !!epubFile };
+    const isEpub = /\.epub$/i.test(chosen.name || '') || (chosen.format || '').toLowerCase().includes('epub');
+    const filename = isEpub ? `archive-${identifier}.epub` : `archive-${identifier}.pdf`;
+    return { blob, filename, isEpub };
   }
 
   global.CatalogSearch = {

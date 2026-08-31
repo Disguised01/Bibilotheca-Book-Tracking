@@ -1311,6 +1311,17 @@ function waitForLayout() {
   });
 }
 
+// Guards against epub.js occasionally never resolving a step (e.g. a
+// malformed spine/OPF that leaves display() waiting on an iframe load
+// event that never fires) — without this, the loading screen could
+// hang forever with no way out.
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} took too long (over ${Math.round(ms / 1000)}s) — this EPUB may be malformed or unusually large.`)), ms)),
+  ]);
+}
+
 function resizeEpubViewer() {
   if (!epubRendition) return;
   const { width, height } = getViewerDimensions();
@@ -1923,10 +1934,10 @@ async function openBook(file) {
       bindEpubSurfaceClicks();
       resizeEpubViewer();
     });
-    await epubRendition.display();
-    await finalizeEpubLayout();
+    await withTimeout(epubRendition.display(), 20000, 'Displaying the first page');
+    await withTimeout(finalizeEpubLayout(), 15000, 'Rendering layout');
     applyReaderTheme();
-    await restoreBookmark();
+    await withTimeout(restoreBookmark(), 15000, 'Restoring bookmark');
     readerEmpty.hidden = true;
     readerEmpty.classList.remove('is-loading');
     epubViewer.hidden = false;
