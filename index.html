@@ -671,6 +671,24 @@ header h1 {
   color: var(--gold-dim); padding: 5px 10px; border-radius: 3px; cursor: pointer;
 }
 .link-result-use:hover { background: rgba(212,175,55,0.12); color: var(--gold); }
+.link-manual-divider {
+  text-align: center; font-family: 'Cinzel', serif; font-size: 9px;
+  letter-spacing: .08em; text-transform: uppercase; color: rgba(209,199,183,0.3);
+  margin: 18px 0 10px; position: relative;
+}
+.link-manual-divider::before, .link-manual-divider::after {
+  content: ''; position: absolute; top: 50%; width: 30%; height: 1px;
+  background: rgba(212,175,55,0.15);
+}
+.link-manual-divider::before { left: 0; }
+.link-manual-divider::after { right: 0; }
+.link-manual-preview {
+  display: flex; align-items: center; gap: 12px; margin-top: 12px;
+  padding: 10px; border: 1px solid rgba(212,175,55,0.2); border-radius: 6px;
+  background: rgba(212,175,55,0.04);
+}
+.link-manual-preview img { width: 32px; height: 44px; object-fit: cover; flex-shrink: 0; border-radius: 2px; }
+.link-manual-preview .link-result-text { flex: 1; min-width: 0; }
 .avail-badge {
   font-family: 'Cinzel', serif; font-size: 8px; letter-spacing: .05em;
   text-transform: uppercase; padding: 3px 7px; border-radius: 3px; flex-shrink: 0;
@@ -831,6 +849,12 @@ header h1 {
     <div id="linkResults">
       <div class="link-empty">Search Project Gutenberg and Internet Archive above, then pick the matching edition.</div>
     </div>
+    <div class="link-manual-divider">or, if search doesn't find it</div>
+    <div class="link-search-row">
+      <input type="text" id="linkManualInput" placeholder="Paste an archive.org or gutenberg.org link, or an ID…">
+      <button class="hbtn" id="linkManualBtn" style="padding:9px 16px;font-size:11px;">Add by link</button>
+    </div>
+    <div id="linkManualResult"></div>
     <button class="link-modal-close" id="linkModalClose">Close</button>
   </div>
 </div>
@@ -1745,6 +1769,20 @@ if (window.BiblioSync) {
     });
   }
 
+  // Shared by both search results and the manual-link preview.
+  function linkToSource(entry) {
+    const already = BookSources.findByExternalId(entry.source, entry.externalId);
+    if (already && already !== activeBook.id) {
+      if (!confirm('This edition is already linked to another book on your shelf. Link it here too?')) return false;
+    }
+    BookSources.setSource(activeBook.id, entry);
+    toast(`Linked "${activeBook.title}" to ${entry.source === 'gutenberg' ? 'Project Gutenberg' : 'Internet Archive'}`);
+    renderManage();
+    renderCurrentLink();
+    closeModal();
+    return true;
+  }
+
   async function runSearch() {
     const query = input.value.trim();
     if (!query || !activeBook) return;
@@ -1763,21 +1801,12 @@ if (window.BiblioSync) {
       results.querySelectorAll('.link-result-use').forEach(btn => {
         btn.addEventListener('click', () => {
           const row = btn.closest('.link-result-row');
-          const entry = {
+          linkToSource({
             source: row.dataset.source,
             externalId: row.dataset.externalId,
             title: row.dataset.title,
             author: row.dataset.author,
-          };
-          const already = BookSources.findByExternalId(entry.source, entry.externalId);
-          if (already && already !== activeBook.id) {
-            if (!confirm('This edition is already linked to another book on your shelf. Link it here too?')) return;
-          }
-          BookSources.setSource(activeBook.id, entry);
-          toast(`Linked "${activeBook.title}" to ${entry.source === 'gutenberg' ? 'Project Gutenberg' : 'Internet Archive'}`);
-          renderManage();
-          renderCurrentLink();
-          closeModal();
+          });
         });
       });
     } catch (e) {
@@ -1789,6 +1818,51 @@ if (window.BiblioSync) {
 
   searchBtn.addEventListener('click', runSearch);
   input.addEventListener('keydown', e => { if (e.key === 'Enter') runSearch(); });
+
+  // ── Manual add-by-link/ID ────────────────────────────────────────────
+  // For legitimate public-domain items that keyword search misses
+  // (typos, foreign titles, niche uploads) — resolves a pasted link or
+  // bare ID into real title/author via the source's own metadata, then
+  // links it the same way a search result would.
+  const manualInput = document.getElementById('linkManualInput');
+  const manualBtn = document.getElementById('linkManualBtn');
+  const manualResult = document.getElementById('linkManualResult');
+
+  async function runManualLookup() {
+    const value = manualInput.value.trim();
+    if (!value || !activeBook) return;
+    if (!window.CatalogSearch) {
+      manualResult.innerHTML = '<div class="link-error">Catalog search isn\'t available (catalog-search.js failed to load).</div>';
+      return;
+    }
+    manualResult.innerHTML = '<div class="link-empty">Looking it up…</div>';
+    try {
+      const entry = await CatalogSearch.resolveManualLink(value);
+      const checker = entry.source === 'gutenberg' ? CatalogSearch.checkGutenbergAvailability : CatalogSearch.checkArchiveAvailability;
+      const avail = await checker(entry.externalId);
+      const badgeText = avail.unknown ? '?' : avail.available ? (avail.format === 'epub' ? 'EPUB' : avail.format === 'text' ? 'TEXT' : 'PDF') : 'unavailable';
+      const badgeClass = avail.unknown ? 'checking' : avail.available ? avail.format : 'none';
+      manualResult.innerHTML = `
+        <div class="link-manual-preview">
+          ${entry.coverUrl ? `<img src="${esc(entry.coverUrl)}" alt="">` : '<div style="width:32px;height:44px;flex-shrink:0;"></div>'}
+          <div class="link-result-text">
+            <div class="link-result-title">${esc(entry.title)}</div>
+            <div class="link-result-author">${esc(entry.author)}</div>
+          </div>
+          <span class="avail-badge ${badgeClass}">${badgeText}</span>
+          <button class="link-result-use" id="linkManualUseBtn">Use this</button>
+        </div>
+      `;
+      document.getElementById('linkManualUseBtn').addEventListener('click', () => {
+        linkToSource({ source: entry.source, externalId: entry.externalId, title: entry.title, author: entry.author });
+      });
+    } catch (e) {
+      manualResult.innerHTML = `<div class="link-error">${esc(e.message)}</div>`;
+    }
+  }
+
+  manualBtn.addEventListener('click', runManualLookup);
+  manualInput.addEventListener('keydown', e => { if (e.key === 'Enter') runManualLookup(); });
 })();
 </script>
 </body>

@@ -189,6 +189,91 @@
     return data.files || [];
   }
 
+  // Extracts an Archive identifier from either a bare identifier or a
+  // full archive.org URL (details/download/embed pages, with or without
+  // a trailing /page/N/mode/2up viewer path).
+  function parseArchiveIdentifier(input) {
+    const trimmed = (input || '').trim();
+    if (!trimmed) return null;
+    const match = trimmed.match(/archive\.org\/(?:details|download|embed)\/([^/?#]+)/i);
+    if (match) return decodeURIComponent(match[1]);
+    if (/^[a-zA-Z0-9._-]+$/.test(trimmed)) return trimmed; // looks like a bare identifier
+    return null;
+  }
+
+  // Extracts a Gutenberg ebook number from either a bare number or a
+  // full gutenberg.org URL.
+  function parseGutenbergId(input) {
+    const trimmed = (input || '').trim();
+    if (!trimmed) return null;
+    const match = trimmed.match(/gutenberg\.org\/(?:ebooks|files|cache\/epub)\/(\d+)/i);
+    if (match) return match[1];
+    if (/^\d+$/.test(trimmed)) return trimmed;
+    return null;
+  }
+
+  /**
+   * Resolve a manually-entered Archive URL/identifier into a full
+   * candidate result — same normalized shape as searchArchive() — by
+   * fetching the item's real title/author from its metadata, so it can
+   * be linked exactly like a search result even though it never showed
+   * up in search (e.g. a title search miss, or a niche public-domain
+   * upload search doesn't surface well).
+   */
+  async function resolveArchiveLink(input) {
+    const identifier = parseArchiveIdentifier(input);
+    if (!identifier) throw new Error('Could not find an Archive identifier in that link. Paste the full archive.org/details/... URL or just the identifier.');
+    const res = await fetchWithTimeout(`https://archive.org/metadata/${encodeURIComponent(identifier)}`, METADATA_TIMEOUT_MS);
+    if (!res.ok) throw new Error(`Could not find Archive item "${identifier}" (${res.status}) — check the link is correct and the item is public.`);
+    const data = await res.json();
+    if (!data || !data.metadata) throw new Error(`Archive item "${identifier}" has no accessible metadata — it may be private or restricted.`);
+    const meta = data.metadata;
+    return {
+      source: 'archive',
+      externalId: identifier,
+      title: meta.title || identifier,
+      author: Array.isArray(meta.creator) ? meta.creator[0] : (meta.creator || 'Unknown'),
+      coverUrl: `https://archive.org/services/img/${identifier}`,
+      files: data.files || [],
+    };
+  }
+
+  /**
+   * Same idea for a manually-entered Gutenberg URL/ebook number.
+   */
+  async function resolveGutenbergLink(input) {
+    const id = parseGutenbergId(input);
+    if (!id) throw new Error('Could not find a Gutenberg ebook number in that link. Paste the full gutenberg.org/ebooks/... URL or just the number.');
+    const res = await fetchWithTimeout(`${GUTENDEX_BASE}/${id}`, METADATA_TIMEOUT_MS);
+    if (!res.ok) throw new Error(`Could not find Gutenberg book #${id} (${res.status}).`);
+    const book = await res.json();
+    return {
+      source: 'gutenberg',
+      externalId: String(book.id),
+      title: book.title || 'Untitled',
+      author: (book.authors && book.authors[0] && book.authors[0].name) || 'Unknown',
+      coverUrl: (book.formats && book.formats['image/jpeg']) || null,
+      formats: book.formats || {},
+    };
+  }
+
+  /**
+   * Given a pasted link/ID of either kind, figure out which source it
+   * is and resolve it. Tries Archive first if the input looks like an
+   * archive.org URL or Gutenberg first if it looks like a gutenberg.org
+   * URL or bare number; otherwise tries both and returns whichever
+   * resolves (a bare alphanumeric identifier is ambiguous between the
+   * two, so this covers that case too).
+   */
+  async function resolveManualLink(input) {
+    const trimmed = (input || '').trim();
+    if (!trimmed) throw new Error('Paste a link or ID first.');
+    if (/gutenberg\.org/i.test(trimmed)) return resolveGutenbergLink(trimmed);
+    if (/archive\.org/i.test(trimmed)) return resolveArchiveLink(trimmed);
+    if (/^\d+$/.test(trimmed)) return resolveGutenbergLink(trimmed); // bare number → assume Gutenberg ebook id
+    return resolveArchiveLink(trimmed); // bare alphanumeric → assume Archive identifier
+  }
+
   // Prefer a PDF over Archive's own auto-generated EPUB derivative.
   // Archive's EPUB conversion is automated and can produce malformed
   // manifests (confirmed case: a spine item with an undefined href,
@@ -243,5 +328,6 @@
     searchGutenberg, searchArchive, searchAll,
     getGutenbergFormats, fetchGutenbergFile, checkGutenbergAvailability,
     getArchiveFiles, fetchArchiveFile, checkArchiveAvailability,
+    resolveArchiveLink, resolveGutenbergLink, resolveManualLink,
   };
 })(window);
