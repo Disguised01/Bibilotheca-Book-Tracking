@@ -63,6 +63,7 @@
   // easier to work with than Gutenberg's own bulk RDF/catalog files.
   const GUTENDEX_BASE = 'https://gutendex.com/books';
   const GUTENBERG_PROXY = 'https://ewwhbstfgyzmjrmiufaq.supabase.co/functions/v1/gutenberg-proxy';
+  const ARCHIVE_PROXY = 'https://ewwhbstfgyzmjrmiufaq.supabase.co/functions/v1/archive-proxy';
   const METADATA_TIMEOUT_MS = 15000;
 
   async function searchGutenberg(query) {
@@ -311,13 +312,19 @@
     const { chosen } = pickArchiveFile(identifier, files);
     if (!chosen) throw new Error('This Archive item has no EPUB or PDF file available.');
 
-    const url = `https://archive.org/download/${encodeURIComponent(identifier)}/${encodeURIComponent(chosen.name)}`;
+    const directUrl = `https://archive.org/download/${encodeURIComponent(identifier)}/${encodeURIComponent(chosen.name)}`;
     let blob;
     try {
-      blob = await fetchBlobWithProgress(url, onProgress);
+      // Archive.org's /download/ endpoint redirects to a specific storage
+      // node to serve the actual bytes, and those nodes are inconsistent
+      // about sending CORS headers — some files work with a direct
+      // browser fetch, others don't, regardless of the file itself being
+      // fine. Route through our own proxy (same fix as Gutenberg) so this
+      // doesn't depend on which storage node a given file happens to live on.
+      blob = await fetchBlobWithProgress(`${ARCHIVE_PROXY}?url=${encodeURIComponent(directUrl)}`, onProgress);
     } catch (e) {
       if (e.message && (e.message.includes('Request timed out') || e.message.includes('File request failed'))) throw e;
-      throw new Error('Could not reach archive.org directly from the browser (likely a CORS restriction on this file, not a problem with your book\'s id link).');
+      throw new Error('Could not fetch this file via the archive proxy (it may be temporarily down, or the proxy function may need to be deployed — see README).');
     }
     const isEpub = /\.epub$/i.test(chosen.name || '') || (chosen.format || '').toLowerCase().includes('epub');
     const filename = isEpub ? `archive-${identifier}.epub` : `archive-${identifier}.pdf`;
